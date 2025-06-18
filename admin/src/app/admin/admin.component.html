@@ -1,0 +1,152 @@
+  <mat-toolbar>
+    <button mat-icon-button (click)="sideNav.toggle()">
+      <mat-icon class="mat-icon-white">menu</mat-icon>
+    </button>
+    <span class="mx-auto">Property manager ticket</span>
+  </mat-toolbar>
+  <mat-sidenav-container class="h-screen">
+    <mat-sidenav #sideNav [mode]="sideNavMode()" [opened]="sideNavOpened()" position="start" class="w-20">
+      <mat-nav-list>
+        <a mat-list-item href="/resident" routerLinkActive="active-link">Resident</a>
+        <a mat-list-item href="/landlord" routerLinkActive="active-link">Landlord</a>
+        <a mat-list-item href="/property-manager" routerLinkActive="active-link">Property Manager</a>
+        <a mat-list-item href="/admin" routerLinkActive="active-link">Admin</a>
+      </mat-nav-list>
+    </mat-sidenav>
+    <mat-sidenav-content class="bg-gray-100">
+      <div class="container">
+
+        <div class="flex flex-row flex-wrap">
+          <div class="flex flex-row justify-center items-center bg-white p-2 rounded-lg mx-auto max-md:w-1/2 max-sm:w-full max-sm:mb-3">
+            <div class="mr-5">
+              <img src="./assets/img/megaphone.png" alt="megaphone" height="80" width="80"/>
+            </div>
+            <div class="mr-5">
+              <div class="flex flex-col">
+                <span class="text-3xl">10</span>
+                <span class="uppercase text-sm tracking-wide">new orders</span>
+              </div>
+            </div>
+            <div>
+              <button mat-icon-button>
+                <mat-icon class="mat-icon-primary">visibility</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-row justify-center items-center bg-white p-2 rounded-lg mx-auto max-md:w-1/2 max-sm:w-full max-sm:mb-3">
+            <div class="mr-5">
+              <img src="./assets/img/gears.png" alt="gears" height="80" width="80"/>
+            </div>
+            <div class="mr-5">
+              <div class="flex flex-col">
+                <span class="text-3xl">80</span>
+                <span class="uppercase text-sm tracking-wide">In Progress</span>
+              </div>
+            </div>
+            <div>
+              <button mat-icon-button>
+                <mat-icon class="mat-icon-primary">visibility</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="my-10 bg-white p-5 rounded-lg">
+          <header class="uppercase text-sm font-medium tracking-widest mb-3">
+            order summary
+          </header>
+
+          <div class="overflow-x-scroll w-full">
+            <table class="table-summary">
+              <tr class="summary-header">
+                <td><span>Resident</span></td>
+                <td><span>Issue</span></td>
+                <td><span>Category</span></td>
+                <td><span>Status</span></td>
+              </tr>
+              <tr class="summary-row">
+                <td><span>Michael Jordan</span></td>
+                <td><span>Oven Issue</span></td>
+                <td><span>Plumbing</span></td>
+                <td><span>In progress</span></td>
+              </tr>
+              <tr class="summary-row">
+                <td><span>Dana White</span></td>
+                <td><span>Oven Issue</span></td>
+                <td><span>Plumbing</span></td>
+                <td><span>In progress</span></td>
+              </tr>
+              <tr class="summary-row">
+                <td><span>Oscar burgos</span></td>
+                <td><span>Oven Issue</span></td>
+                <td><span>Plumbing</span></td>
+                <td><span>In progress</span></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+
+<!--<mat-drawer-container>-->
+<!--  <mat-drawer></mat-drawer>-->
+<!--  <mat-drawer-content>-->
+<!--    <mat-toolbar>-->
+<!--      <div class="flex justify-between w-full">-->
+<!--        <div>Admin Dashboard</div>-->
+<!--        <div class="w-12">-->
+<!--          <img ngSrc="ai-propertymanager.png" height="80" width="80" alt="AI Property Manager"/>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </mat-toolbar>-->
+<!--    <div class="mx-auto my-5 lg:w-1/2 md:w-3/4">-->
+<!--      <div class="mx-5">-->
+<!--        <section class="mt-8">-->
+<!--          <header class="text-xl mb-5">Ticket information</header>-->
+<!--          <pre class="block-code">-->
+<!--          <code>-->
+<!--            {{ assistantResponse().code }}-->
+<!--          </code>-->
+<!--        </pre>-->
+<!--          <div class="flex justify-end">-->
+<!--            <button mat-icon-button [cdkCopyToClipboard]="assistantResponse().code">-->
+<!--              <mat-icon>content_copy</mat-icon>-->
+<!--            </button>-->
+<!--          </div>-->
+<!--        </section>-->
+
+<!--        <section class="mt-10">-->
+<!--          <div>-->
+<!--            <span class="block mb-2">Issue reporter: {{ assistantResponse().tenant }}</span>-->
+<!--            <span class="block mb-2">Property: {{ assistantResponse().property }}</span>-->
+<!--            <span class="block mb-2">Issue: {{ assistantResponse().issue }}</span>-->
+<!--            <span class="block mb-2">Issue: {{ assistantResponse().solutions }}</span>-->
+<!--          </div>-->
+<!--        </section>-->
+
+<!--        <section class="mt-10">-->
+<!--          <div class="flex flex-col">-->
+<!--            <mat-expansion-panel  (opened)="panelOpenState.set(true)" (closed)="panelOpenState.set(false)">-->
+<!--              <mat-expansion-panel-header>-->
+<!--                <mat-panel-title>-->
+<!--                  <div class="text-xl text-center font-bold mb-3">Recommended Suppliers</div>-->
+<!--                </mat-panel-title>-->
+<!--              </mat-expansion-panel-header>-->
+
+<!--              <mat-list role="list">-->
+<!--                @for (supplier of assistantResponse().suppliers; track supplier.name) {-->
+<!--                  <mat-list-item role="listitem">-->
+<!--                    {{ supplier.name }}-->
+<!--                  </mat-list-item>-->
+<!--                }-->
+<!--              </mat-list>-->
+<!--            </mat-expansion-panel>-->
+<!--          </div>-->
+<!--        </section>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </mat-drawer-content>-->
+<!--</mat-drawer-container>-->

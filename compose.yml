@@ -1,0 +1,32 @@
+name: ai_property_manager
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./gateway:/etc/nginx/conf.d
+    depends_on:
+      - ui
+      - api
+  
+  ui: 
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+      args:
+        - ENVIRONMENT=development
+    container_name: ui
+    depends_on:
+      - api
+  
+  api:
+    build:
+      context: ./ticketApi/ticketApi/
+      dockerfile: Dockerfile
+    container_name: api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development    

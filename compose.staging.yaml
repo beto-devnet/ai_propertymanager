@@ -1,0 +1,21 @@
+name: ai-property-manager
+
+services:
+  ui: 
+    image: betoramiz/ai_propertymanager_ui:1.0
+    container_name: ui    
+    environment:
+      - configuration=development
+    depends_on:
+      - api
+  
+  api:
+    image: betoramiz/ai_propertymanager_api:1.0
+    container_name: api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+networks:
+  default:
+    external: true
+    name: lab-net

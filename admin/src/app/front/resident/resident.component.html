@@ -1,0 +1,48 @@
+
+<div class="flex flex-col items-center justify-between min-w-[300px] mx-4 mt-10 mb-8">
+  <section class="m-auto">
+    <img ngSrc="ai-propertymanager.png" height="200" width="200" alt="AI Property Manager"/>
+  </section>
+  <section class="mb-5 mt-10 min-[310px]:w-full sm:w-full md:w-3/4 lg:w-1/2">
+    <form action="" [formGroup]="issueDescriptorForm">
+      <div class="text-xl text-center font-bold mb-3">What can I help you with?</div>
+      <mat-form-field class="w-full mb-7">
+        <textarea formControlName="issue" placeholder="Describe your problem" matInput rows="4"></textarea>
+      </mat-form-field>
+      <div class="flex justify-end">
+        <button class="send-button" matSuffix mat-flat-button (click)="processIssue()" [disabled]="isLoadingAnswer()">
+          Send <mat-icon iconPositionEnd>send</mat-icon>
+        </button>
+      </div>
+    </form>
+  </section>
+  @if (isLoadingAnswer()) {
+    <mat-spinner class="m-auto mt-8"></mat-spinner>
+  } @else {
+    <section class="mt-5 sm:w-full md:w-3/4 lg:w-1/2">
+      <div class="text-justify">{{ response().recommendedSolution }}</div>
+    </section>
+  }
+
+<!--  <section class="mt-10 mb-16 min-[310px]:w-full sm:w-full md:w-3/4 lg:w-1/2">-->
+<!--    <div class="flex flex-col">-->
+<!--      @if (!isLoadingAnswer() && response().recommendedSuppliers.length > 0) {-->
+<!--        <mat-expansion-panel  (opened)="panelOpenState.set(true)" (closed)="panelOpenState.set(false)">-->
+<!--          <mat-expansion-panel-header>-->
+<!--            <mat-panel-title>-->
+<!--              <div class="text-xl text-center font-bold mb-3">Recommended Suppliers</div>-->
+<!--            </mat-panel-title>-->
+<!--          </mat-expansion-panel-header>-->
+
+<!--          <mat-list role="list">-->
+<!--            @for (supplier of response().recommendedSuppliers; track supplier.name) {-->
+<!--              <mat-list-item role="listitem">-->
+<!--                {{ supplier.name }}-->
+<!--              </mat-list-item>-->
+<!--            }-->
+<!--          </mat-list>-->
+<!--        </mat-expansion-panel>-->
+<!--      }-->
+<!--    </div>-->
+<!--  </section>-->
+</div>

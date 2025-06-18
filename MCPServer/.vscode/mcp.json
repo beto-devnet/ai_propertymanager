@@ -1,0 +1,13 @@
+{
+    "servers": {
+        "property-manager": {
+            "type": "stdio",
+            "command": "dotnet",
+            "args": [
+                "run",
+                "--project",
+                "C:\\code\\Developers\\ai_poc\\MCPServer\\MCPServer\\MCPServer.csproj"
+            ]
+        }
+    }
+} 

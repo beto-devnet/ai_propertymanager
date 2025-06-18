@@ -1,0 +1,180 @@
+<div class="chat-container">
+
+  <!--  Tenant Chat -->
+  <div class="iphone">
+    <div class="iphone-screen">
+      <div class="notch"></div>
+      <div class="status-bar">
+        <div class="time">9:41</div>
+        <div class="battery-status">
+          <span>100%</span>
+          <div class="battery-icon">
+            <div class="battery-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-container">
+        <div class="section-header">
+          <div>
+            <img width="120px" fetchpriority="high" alt="" src="https://www.buildium.com/wp-content/uploads/2023/08/buildium-logo-1.svg">
+          </div>
+          <div>Diane Harris</div>
+          <div>
+            <img ngSrc="./assets/img/person.jpeg" alt="" height="30" width="40" class="rounded-full">
+          </div>
+        </div>
+        <div class="content">
+          <div class="chat-messages">
+            <div class="h-32">
+              <textarea [formControl]="issueControl" class="w-full p-3 resize-none rounded-2xl" rows="4"></textarea>
+              <button [ngClass]="{'disabled' : blockButtons()}"  class="relative bottom-20 float-right left-3  rounded-full w-9 issue-button" mat-ripple (click)="processIssue()" [disabled]="blockButtons()">
+                <mat-icon class="mat-icon-white mt-1">add</mat-icon>
+              </button>
+            </div>
+
+            <div class="inline">
+              @if (blockButtons()){
+                <mat-spinner [diameter]="30" class="float-left"></mat-spinner>
+              }
+              <mat-paginator
+                class="float-end"
+                [disabled]="blockButtons()"
+                [pageSizeOptions]="[]"
+                [pageSize]="1"
+                [length]="examples.length"
+                [hidePageSize]="true"
+                (page)="handlePageEvent($event)">
+              </mat-paginator>
+            </div>
+
+            @for (tenantMessage of tenantMessagesLog(); track $index) {
+              <chat-bubble [time]="tenantMessage.deliveryTime" [isIncoming]="tenantMessage.isIncoming">
+                {{ tenantMessage.response }}
+              </chat-bubble>
+            }
+            @if (typingTenant()) {
+              <typing-dots></typing-dots>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!--  Event container -->
+  <div class="iphone">
+    <div class="iphone-screen">
+      <div class="notch"></div>
+      <div class="status-bar">
+        <div class="time">9:41</div>
+        <div class="battery-status">
+          <span>100%</span>
+          <div class="battery-icon">
+            <div class="battery-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-container">
+        <div class="section-header">
+          <div>
+            <img width="60" height="60" fetchpriority="high" alt="" ngSrc="ai-propertymanager.png">
+          </div>
+          <div>Aimee Jones</div>
+          <div>
+            <img ngSrc="./assets/img/AmieeJones.png" width="40" alt="" height="49">
+          </div>
+        </div>
+        <div class="content">
+          <div class="chat-messages">
+            @if (issueResponse() !== null) {
+              <chat-bubble [time]="issueResponse()?.date!">
+                <div class="message-container">
+                  <label>Category:</label>
+                  <p>{{ issueResponse()?.category }}</p>
+                </div>
+                <div class="message-container">
+                  <label>Issue:</label>
+                  <p>{{ issueResponse()?.issue }}</p>
+                </div>
+                <div class="message-container">
+                  <label>Resident:</label>
+                  <p>{{ issueResponse()?.tenantName }}</p>
+                </div>
+                <div class="message-container">
+                  <label>Address:</label>
+                  <p>Some address</p>
+                </div>
+                <div class="message-container">
+                  <label>Phone:</label>
+                  <p>{{ issueResponse()?.phone }}</p>
+                </div>
+                <div class="message-container">
+                  <label>Response:</label>
+                  <p>{{ issueResponse()?.response }}</p>
+                </div>
+                <div class="message-container">
+                  <label>Next step:</label>
+                  <p>Get a vendor to fix issue</p>
+                </div>
+              </chat-bubble>
+            }
+
+            @for (eventMessage of eventMessagesLog(); track $index) {
+              <chat-bubble [time]="eventMessage.deliveryTime">
+                <div class="message-container">
+                  <label>Task:</label>
+                  <p>{{ eventMessage.task }}</p>
+                </div>
+                <div class="message-container">
+                  <label>Response:</label>
+                  <p>{{ eventMessage.response }}</p>
+                </div>
+              </chat-bubble>
+            }
+            @if (typingLog()) {
+              <typing-dots></typing-dots>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="iphone">
+    <div class="iphone-screen">
+      <div class="notch"></div>
+      <div class="status-bar">
+        <div class="time">9:41</div>
+        <div class="battery-status">
+          <span>100%</span>
+          <div class="battery-icon">
+            <div class="battery-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contenedor principal con overflow-y: auto -->
+      <div class="content-container">
+        <div class="section-header">
+          <h1 class="section-title">Vendor - chat</h1>
+        </div>
+        <div class="content">
+          <div class="chat-messages">
+
+            @for (vendorMessage of vendorMessagesLog(); track $index) {
+              <chat-bubble [time]="vendorMessage.deliveryTime" [isIncoming]="vendorMessage.isIncoming">
+                {{ vendorMessage.response }}
+              </chat-bubble>
+            }
+            @if (typingVendor()) {
+              <typing-dots></typing-dots>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

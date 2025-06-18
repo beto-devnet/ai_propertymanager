@@ -1,0 +1,1 @@
+readme - POC with AI
