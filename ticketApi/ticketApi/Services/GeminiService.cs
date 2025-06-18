@@ -30,7 +30,7 @@ public class GeminiService
     {
         return await Task.FromResult(new Gemini.IssueResponse()
         {
-            Category = "Heating & Cooling",
+            Category = "HVAC",
             Response =
                 "I'm sorry to hear that your AC is not cooling. I will make sure the right team is assigned to assist you ASAP!"
         });

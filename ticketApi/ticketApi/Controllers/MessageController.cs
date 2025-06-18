@@ -50,5 +50,35 @@ namespace ticketApi.Controllers
         {
             return Ok(await _demoServices.VendorConfirmScheduledVisit());
         }
+
+        [HttpPost("inform-tenant-visit-time")]
+        public async Task<IActionResult> InformTenantVisitTime(Demo.AimeeMessageToTenantRequest request)
+        {
+            return Ok(await _demoServices.InformTenantAboutVisitTime(request));
+        }
+
+        [HttpPost("fix-completed")]
+        public async Task<IActionResult> VendorInformFixHasCompleted(Demo.FixHasCompletedRequest request)
+        {
+            return Ok(await _demoServices.FixHasCompleted(request));
+        }
+        
+        [HttpPost("message-to-vendor-fixed-issue")]
+        public async Task<IActionResult> IssueFixedResponse(Demo.ReplyToVendorIssueFixedRequest request)
+        {
+            return Ok(await _demoServices.ReplyToVendorIssueFixed(request));
+        }
+        
+        [HttpPost("message-to-tenant-close-ticket")]
+        public async Task<IActionResult> MessageToCloseTicket(Demo.MessageToTenantCloseTicketRequest request)
+        {
+            return Ok(await _demoServices.MessageToTenantCloseTicket(request));
+        }
+        
+        [HttpPost("tenant-to-aimee-close-ticket")]
+        public async Task<IActionResult> CloseTicket(Demo.TenantResponseToCloseTicketRequest request)
+        {
+            return Ok(await _demoServices.TenantResponseCloseTicket(request));
+        }
     }
 }

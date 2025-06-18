@@ -11,14 +11,14 @@ public class OpenAIService
     private const string AssistantId = "asst_2P5ROtclF7iu7cvMpnzlUWkj";
     private const string ThreadId = "thread_DvjngcXcpcP9W3a3Iw4iy6MS";
     private readonly PropertyService _propertyService;
-    private readonly SupplierService _supplierService;
+    private readonly VendorService _vendorService;
     private const string baseUrl = "https://api.openai.com/v1";
 
     
-    public OpenAIService(PropertyService propertyService, SupplierService supplierService)
+    public OpenAIService(PropertyService propertyService, VendorService vendorService)
     {
         _propertyService = propertyService;
-        _supplierService = supplierService;
+        _vendorService = vendorService;
     }
     
     public async Task<string> GetAnswerAsync(Models.Models.AssistantRequest request)

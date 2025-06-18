@@ -13,7 +13,9 @@ public class Models
         public string Answer { get; set; } = string.Empty;
     }
 
-    public record Vendor(string Id, string Category, string Name, string DescriptionOfServices);
+    // public record Vendor(string Id, string Category, string Name, string DescriptionOfServices);
+    public record Contact(string Name, string Email, string Phone, string PreferredMethodOfContact);
+    public record Vendor(int Id, string Category, bool PreferedVendor, string CompanyName, string DescriptionOfServices, List<Contact> Contacts);
     public record Property(string Address, string Tenant, string Landlord, string ImportantContractObligations);
     public record Category(string Name, string Description);
 

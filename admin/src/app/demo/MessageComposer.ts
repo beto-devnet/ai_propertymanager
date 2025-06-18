@@ -8,11 +8,21 @@ import { IssueResponse } from './models/issueResponse';
 import { EventMessageLog, MessageLog } from './models/messageLog';
 import { Step } from './models/step';
 import {
+  AimeeMessageToTenantRequest,
+  AimeeMessageToTenantResponse,
+  FixHasCompletedRequest,
+  FixHasCompletedResponse,
   InformTenantVendorContact,
   InformTenantVendorContactResponse,
-  ServiceAvailabilityMessageRequest, ServiceAvailabilityMessageResponse,
+  MessageToTenantCloseTicketRequest, MessageToTenantCloseTicketResponse,
+  ReplyToVendorIssueFixedRequest,
+  ReplyToVendorIssueFixedResponse,
+  ServiceAvailabilityMessageRequest,
+  ServiceAvailabilityMessageResponse,
   ServiceAvailabilityRequest,
-  ServiceAvailabilityResponse, VendorAvailabilityResponse, VendorMessageToAgent
+  ServiceAvailabilityResponse, TenantResponseToCloseTicketRequest, TenantResponseToCloseTicketResponse,
+  VendorAvailabilityResponse,
+  VendorMessageToAgent
 } from './models/tenant.models';
 
 export class MessageComposer {
@@ -98,6 +108,71 @@ export class MessageComposer {
       );
 
     return firstValueFrom(sub);
+  }
+
+  aimeeMessageToTenantAboutVisitTime = async (request: AimeeMessageToTenantRequest): Promise<AimeeMessageToTenantResponse | null> => {
+    const sub = this.demoService
+      .aimeeMessageToTenantAboutVisitTime(request)
+      .pipe(
+        delay(4000),
+        catchError((e: Error) => {
+          return of(null);
+        })
+      );
+
+    return await firstValueFrom(sub);
+  }
+
+  vendorInformFixedHasCompleted = async (request: FixHasCompletedRequest): Promise<FixHasCompletedResponse | null> => {
+    const sub = this.demoService
+      .vendorInformFixedHasCompleted(request)
+      .pipe(
+        delay(4000),
+        catchError((e: Error) => {
+          return of(null);
+        })
+      );
+
+    return await firstValueFrom(sub);
+  }
+
+  IssueFixedResponse = async (request: ReplyToVendorIssueFixedRequest): Promise<ReplyToVendorIssueFixedResponse | null> => {
+    const sub = this.demoService
+      .IssueFixedResponse(request)
+      .pipe(
+        delay(4000),
+        catchError((e: Error) => {
+          return of(null);
+        })
+      );
+
+    return await firstValueFrom(sub);
+  }
+
+  MessageToCloseTicket = async (request: MessageToTenantCloseTicketRequest): Promise<MessageToTenantCloseTicketResponse | null> => {
+    const sub = this.demoService
+      .MessageToCloseTicket(request)
+      .pipe(
+        delay(4000),
+        catchError((e: Error) => {
+          return of(null);
+        })
+      );
+
+    return await firstValueFrom(sub);
+  }
+
+  TenantResponseCloseTicket = async (request: TenantResponseToCloseTicketRequest): Promise<TenantResponseToCloseTicketResponse | null> => {
+    const sub = this.demoService
+      .TenantResponseCloseTicket(request)
+      .pipe(
+        delay(4000),
+        catchError((e: Error) => {
+          return of(null);
+        })
+      );
+
+    return await firstValueFrom(sub);
   }
 
   issueToEventMessageLog(issue: IssueResponse): EventMessageLog {

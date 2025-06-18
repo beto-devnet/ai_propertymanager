@@ -8,17 +8,17 @@ namespace ticketApi.Controllers
     [ApiController]
     public class VendorController : ControllerBase
     {
-        private readonly SupplierService _supplierService;
+        private readonly VendorService _vendorService;
 
-        public VendorController(SupplierService supplierService)
+        public VendorController(VendorService vendorService)
         {
-            _supplierService = supplierService;
+            _vendorService = vendorService;
         }
 
         [HttpGet("list")]
         public async Task<IActionResult> GetAll()
         {
-            var suppliers = _supplierService.GetSuppliers();
+            var suppliers = _vendorService.GetSuppliers();
             return await Task.FromResult(Ok(suppliers));
         }
     }

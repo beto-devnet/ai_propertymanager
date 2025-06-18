@@ -5,13 +5,13 @@ namespace ticketApi.Services;
 public class TicketService
 {
     private readonly TicketDbContext _context;
-    private readonly SupplierService _supplierService;
+    private readonly VendorService _vendorService;
     private readonly List<Models.Models.Vendor> _vendors;
 
-    public TicketService(TicketDbContext context, SupplierService supplierService)
+    public TicketService(TicketDbContext context, VendorService vendorService)
     {
         _context = context;
-        _supplierService = supplierService;
+        _vendorService = vendorService;
         
     }
 
@@ -22,8 +22,8 @@ public class TicketService
 
     public Models.Models.Ticket CreateTicket(Models.Models.TicketRequest ticket)
     {
-        var vendors = _supplierService.GetSuppliers();
-        var vendor = vendors.Where(x => x.Id == ticket.VendorId).FirstOrDefault(); 
+        var vendors = _vendorService.GetSuppliers();
+        var vendor = vendors.First(); //vendors.Where(x => x.Id == ticket.VendorId).FirstOrDefault(); 
         var newTicket = new Models.Models.Ticket
         {
             Category = ticket.Category,

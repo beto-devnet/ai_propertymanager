@@ -7,11 +7,19 @@ import { Category } from './models/category.example';
 import { IssueRequest } from './models/issueRequest';
 import { IssueResponse } from './models/issueResponse';
 import {
+  AimeeMessageToTenantRequest,
+  AimeeMessageToTenantResponse,
+  FixHasCompletedRequest,
+  FixHasCompletedResponse,
   InformTenantVendorContact,
   InformTenantVendorContactResponse,
+  MessageToTenantCloseTicketRequest, MessageToTenantCloseTicketResponse,
+  ReplyToVendorIssueFixedRequest,
+  ReplyToVendorIssueFixedResponse,
   ServiceAvailabilityMessageRequest,
-  ServiceAvailabilityMessageResponse,
-  VendorAvailabilityResponse, VendorMessageToAgent
+  ServiceAvailabilityMessageResponse, TenantResponseToCloseTicketRequest, TenantResponseToCloseTicketResponse,
+  VendorAvailabilityResponse,
+  VendorMessageToAgent
 } from './models/tenant.models';
 
 @Injectable({
@@ -56,5 +64,30 @@ export class DemoService {
   vendorIncomingMessageConfirmationVisit(): Observable<VendorMessageToAgent> {
     const url = `${this.path}/message/get-vendor-message`;
     return this.httpClient.get<VendorMessageToAgent>(url);
+  }
+
+  aimeeMessageToTenantAboutVisitTime(request: AimeeMessageToTenantRequest): Observable<AimeeMessageToTenantResponse> {
+    const url = `${this.path}/message/inform-tenant-visit-time`;
+    return this.httpClient.post <AimeeMessageToTenantResponse>(url, request);
+  }
+
+  vendorInformFixedHasCompleted(request: FixHasCompletedRequest): Observable<FixHasCompletedResponse> {
+    const url = `${this.path}/message/fix-completed`;
+    return this.httpClient.post <FixHasCompletedResponse>(url, request);
+  }
+
+  IssueFixedResponse(request: ReplyToVendorIssueFixedRequest): Observable<ReplyToVendorIssueFixedResponse> {
+    const url = `${this.path}/message/message-to-vendor-fixed-issue`;
+    return this.httpClient.post <ReplyToVendorIssueFixedResponse>(url, request);
+  }
+
+  MessageToCloseTicket(request: MessageToTenantCloseTicketRequest): Observable<MessageToTenantCloseTicketResponse> {
+    const url = `${this.path}/message/message-to-tenant-close-ticket`;
+    return this.httpClient.post <MessageToTenantCloseTicketResponse>(url, request);
+  }
+
+  TenantResponseCloseTicket(request: TenantResponseToCloseTicketRequest): Observable<TenantResponseToCloseTicketResponse> {
+    const url = `${this.path}/message/tenant-to-aimee-close-ticket`;
+    return this.httpClient.post <TenantResponseToCloseTicketResponse>(url, request);
   }
 }

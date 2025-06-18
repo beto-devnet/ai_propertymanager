@@ -13,7 +13,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddTransient<OpenAIService>();
 builder.Services.AddTransient<PropertyService>();
-builder.Services.AddTransient<SupplierService>();
+builder.Services.AddTransient<VendorService>();
 builder.Services.AddTransient<CategoryService>();
 builder.Services.AddTransient<TicketService>();
 builder.Services.AddTransient<DemoServices>();
