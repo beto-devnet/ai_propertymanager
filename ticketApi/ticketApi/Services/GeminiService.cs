@@ -36,7 +36,7 @@ public class GeminiService
         });
     }
 
-    public async Task<ErrorOr<T>> GenerateTextAsync<T>(string prompt) where T: class
+    public async Task<ErrorOr<T>> ProcessTenantIssue<T>(string prompt) where T: class
     {
         try
         {

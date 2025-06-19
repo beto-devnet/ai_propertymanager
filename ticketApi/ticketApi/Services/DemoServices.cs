@@ -40,7 +40,8 @@ public class DemoServices
         
         Also, return a warm response to customer";
 
-        var response = await _geminiService.GenerateTextAsyncFake(prompt); //await _geminiService.GenerateTextAsync<Gemini.IssueResponse>(prompt);
+        // var response = await _geminiService.GenerateTextAsyncFake(prompt);
+        var response = await _geminiService.ProcessTenantIssue<Gemini.IssueResponse>(prompt);
         if (response.IsError)
             return response.FirstError;
 
