@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, signal, WritableSignal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, inject, OnInit, signal, ViewChild, WritableSignal } from '@angular/core';
 import { AppDataService } from '../app-data.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
@@ -25,8 +25,6 @@ import { IWorkflowResult, WorkflowContext } from './workflow/WorkflowContext';
 import {
   AimeeMessageToTenantRequest,
   AimeeMessageToTenantResponse,
-  FixHasCompletedRequest,
-  FixHasCompletedResponse,
   InformTenantVendorContact,
   InformTenantVendorContactResponse, MessageToTenantCloseTicketRequest, MessageToTenantCloseTicketResponse,
   ReplyToVendorIssueFixedRequest,
@@ -36,8 +34,7 @@ import {
   VendorAvailabilityResponse,
   VendorMessageToAgent
 } from './models/tenant.models';
-import { delay, from, of, tap, timer } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 
 type LogType = 'event' | 'vendor' | 'tenant';
 @Component({
@@ -62,6 +59,8 @@ export default class DemoComponent implements OnInit {
   private appDataService: AppDataService = inject(AppDataService);
   messageComposer: MessageComposer = inject(MessageComposer);
   private destroyedRef$: DestroyRef = inject(DestroyRef);
+  private router: Router = inject(Router);
+  @ViewChild('buttonElementLog') private buttonElementLog!: ElementRef;
   examples: Example[] = [];
   categories: Category[] = [];
   issueControl: FormControl = new FormControl<string>('');
@@ -94,6 +93,12 @@ export default class DemoComponent implements OnInit {
     const index = event$.pageIndex;
     this.issueControl.setValue(this.examples[index].issue);
   }
+
+
+  /*
+    const issue = workflow.Categorize({})
+      ---
+  */
 
   async processIssue(): Promise<void> {
 
@@ -263,6 +268,8 @@ export default class DemoComponent implements OnInit {
       await this.sleep(2000);
       this.typingLog.set(false);
       this.eventMessagesLog.update(messages => [...messages, event]);
+      this.buttonElementLog.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+      // await this.router.navigate([], { fragment: 'targetLog' })
     } else {
       const messageLog: MessageLog = this.messageComposer.toMessageLog(event, isIncoming);
 

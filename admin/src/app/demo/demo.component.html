@@ -86,58 +86,60 @@
             <img ngSrc="./assets/img/AmieeJones.png" width="40" alt="" height="49">
           </div>
         </div>
-        <div class="content">
-          <div class="chat-messages">
-            @if (issueResponse() !== null) {
-              <chat-bubble [time]="issueResponse()?.date!">
-                <div class="message-container">
-                  <label>Category:</label>
-                  <p>{{ issueResponse()?.category }}</p>
-                </div>
-                <div class="message-container">
-                  <label>Issue:</label>
-                  <p>{{ issueResponse()?.issue }}</p>
-                </div>
-                <div class="message-container">
-                  <label>Resident:</label>
-                  <p>{{ issueResponse()?.tenantName }}</p>
-                </div>
-                <div class="message-container">
-                  <label>Address:</label>
-                  <p>Some address</p>
-                </div>
-                <div class="message-container">
-                  <label>Phone:</label>
-                  <p>{{ issueResponse()?.phone }}</p>
-                </div>
-                <div class="message-container">
-                  <label>Response:</label>
-                  <p>{{ issueResponse()?.response }}</p>
-                </div>
-                <div class="message-container">
-                  <label>Next step:</label>
-                  <p>Get a vendor to fix issue</p>
-                </div>
-              </chat-bubble>
-            }
+        <div class="chat-messages" #eventContainer>
+          @if (issueResponse() !== null) {
+            <chat-bubble [time]="issueResponse()?.date!">
+              <div class="message-container">
+                <label>Category:</label>
+                <p>{{ issueResponse()?.category }}</p>
+              </div>
+              <div class="message-container">
+                <label>Issue:</label>
+                <p>{{ issueResponse()?.issue }}</p>
+              </div>
+              <div class="message-container">
+                <label>Resident:</label>
+                <p>{{ issueResponse()?.tenantName }}</p>
+              </div>
+              <div class="message-container">
+                <label>Address:</label>
+                <p>Some address</p>
+              </div>
+              <div class="message-container">
+                <label>Phone:</label>
+                <p>{{ issueResponse()?.phone }}</p>
+              </div>
+              <div class="message-container">
+                <label>Response:</label>
+                <p>{{ issueResponse()?.response }}</p>
+              </div>
+              <div class="message-container">
+                <label>Next step:</label>
+                <p>Get a vendor to fix issue</p>
+              </div>
+            </chat-bubble>
+          }
 
-            @for (eventMessage of eventMessagesLog(); track $index) {
-              <chat-bubble [time]="eventMessage.deliveryTime">
-                <div class="message-container">
-                  <label>Task:</label>
-                  <p>{{ eventMessage.task }}</p>
-                </div>
-                <div class="message-container">
-                  <label>Response:</label>
-                  <p>{{ eventMessage.response }}</p>
-                </div>
-              </chat-bubble>
-            }
-            @if (typingLog()) {
-              <typing-dots></typing-dots>
-            }
-          </div>
+          @for (eventMessage of eventMessagesLog(); track $index) {
+            <chat-bubble [time]="eventMessage.deliveryTime">
+              <div class="message-container">
+                <label>Task:</label>
+                <p>{{ eventMessage.task }}</p>
+              </div>
+              <div class="message-container">
+                <label>Response:</label>
+                <p>{{ eventMessage.response }}</p>
+              </div>
+            </chat-bubble>
+          }
+          @if (typingLog()) {
+            <typing-dots></typing-dots>
+          }
+          <div #buttonElementLog id="targetLog"></div>
         </div>
+<!--        <div class="content">-->
+<!--          -->
+<!--        </div>-->
       </div>
     </div>
   </div>
