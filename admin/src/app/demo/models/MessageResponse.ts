@@ -1,11 +1,11 @@
 ﻿export interface MessageResponse<T> {
   text: string;
   deliveryTime: string;
-  data: T;
+  time: T;
 }
 
 export interface MessageResponseBase {
   response: string;
-  date: string;
+  time: string;
 }
 

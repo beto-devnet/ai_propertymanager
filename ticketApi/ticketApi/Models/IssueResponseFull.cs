@@ -3,16 +3,16 @@
 public interface AiMessageResponse
 {
     public string Response { get; set; }
-    public string Date { get; set; }
+    public string Time { get; set; }
 }
 
 public class MessageResponseBase: AiMessageResponse
 {
     public string Response { get; set; }
-    public string Date { get; set; }
+    public string Time { get; set; }
     
     public void SetResponse(string response) => Response = response;
-    public void SetDate() => Date = DateTime.Now.ToShortDateString();
+    public void SetDate() => Time = DateTime.Now.ToString("MM-dd HH:mm");
 }
 
 public class IssueResponseFull(string category, string issue, string tenantName, string phone, string step): MessageResponseBase

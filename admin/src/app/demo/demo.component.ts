@@ -15,7 +15,8 @@ import { TypingDotsComponent } from '../shared/components/typing-dots/typing-dot
 import { MessageComposer } from './MessageComposer';
 import { WorkflowEngine } from './workflow/WorkflowEngine';
 import {
-  ContactToVendorStep, ReceiveMessage,
+  ContactToVendorStep,
+  ReceiveMessage,
   SendMessage,
   TenantRequest,
   VendorAvailabilityResponseStep
@@ -26,15 +27,28 @@ import {
   AimeeMessageToTenantRequest,
   AimeeMessageToTenantResponse,
   InformTenantVendorContact,
-  InformTenantVendorContactResponse, MessageToTenantCloseTicketRequest, MessageToTenantCloseTicketResponse,
+  InformTenantVendorContactResponse,
+  MessageToTenantCloseTicketRequest,
+  MessageToTenantCloseTicketResponse,
   ReplyToVendorIssueFixedRequest,
   ReplyToVendorIssueFixedResponse,
   ServiceAvailabilityMessageRequest,
-  ServiceAvailabilityMessageResponse, TenantResponseToCloseTicketRequest, TenantResponseToCloseTicketResponse,
+  ServiceAvailabilityMessageResponse,
+  TenantResponseToCloseTicketRequest,
+  TenantResponseToCloseTicketResponse,
   VendorAvailabilityResponse,
   VendorMessageToAgent
 } from './models/tenant.models';
-import { Router } from '@angular/router';
+import { FlowEngine } from './Engine/FlowEngine';
+import { ProcessIssueRequest, ProcessIssueResponse } from './Engine/models/ProcessIssue';
+import { Step } from './models/step';
+import { UpdateService } from './Engine/update.service';
+import { LogService } from './Engine/LogService';
+import { SendMessageRequest } from './Engine/models/SendMessageRequest';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Vendor } from './models/vendor.model';
+import { firstValueFrom } from 'rxjs';
+import { AskForAvailability } from './Engine/models/AskForAvailability';
 
 type LogType = 'event' | 'vendor' | 'tenant';
 @Component({
@@ -57,12 +71,14 @@ type LogType = 'event' | 'vendor' | 'tenant';
 export default class DemoComponent implements OnInit {
 
   private appDataService: AppDataService = inject(AppDataService);
+  private service: UpdateService = inject(UpdateService);
   messageComposer: MessageComposer = inject(MessageComposer);
   private destroyedRef$: DestroyRef = inject(DestroyRef);
-  private router: Router = inject(Router);
   @ViewChild('buttonElementLog') private buttonElementLog!: ElementRef;
   examples: Example[] = [];
   categories: Category[] = [];
+  vendors: Vendor[] = [];
+  selectedVendor: Vendor = { id: 0, category: '', preferedVendor: false, companyName: '', descriptionOfServices: '', contacts: [] };
   issueControl: FormControl = new FormControl<string>('');
   private workflow: WorkflowEngine;
   private selectedVendorId: number = 0;
@@ -84,9 +100,13 @@ export default class DemoComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    this.categories = await this.messageComposer.getCategories();
-    this.examples = await this.messageComposer.getExampleIssues()
-    this.issueControl.setValue(this.examples[0].issue);
+    this.service.getCategories().pipe(takeUntilDestroyed(this.destroyedRef$)).subscribe((categories: Category[]) => this.categories = categories);
+    this.service.getVendors().pipe(takeUntilDestroyed(this.destroyedRef$)).subscribe((vendors: Vendor[]) => this.vendors = vendors);
+    this.service.getIssues().pipe(takeUntilDestroyed(this.destroyedRef$)).subscribe((examples: Example[]) => {
+      this.examples = examples;
+      this.issueControl.setValue(examples[0].issue);
+    });
+
   }
 
   handlePageEvent(event$: PageEvent): void {
@@ -99,6 +119,49 @@ export default class DemoComponent implements OnInit {
     const issue = workflow.Categorize({})
       ---
   */
+
+  async processIssueRefactor(): Promise<void> {
+    if(this.issueControl.value.length === 0) {
+      return;
+    }
+
+    this.blockButtons.set(true);
+
+    const issue = this.issueControl.value;
+    const user = 'Diane Harris';
+    const tenant =  {
+      id: 1,
+      name: 'Diane Harris',
+      phone: '123-456-789',
+      address: 'some street 123'
+    };
+
+
+    const flowIssue = new FlowEngine(this.service);
+
+    //flow - issue
+    this.typingLog();
+    const issueReq: ProcessIssueRequest = { User: tenant.name, IssueDescription: issue };
+    const issueResult = await flowIssue.processStep<ProcessIssueResponse>(issueReq);
+    const log = LogService.issueToEventMessageLog(issueResult.data!)
+    this.issueResponse.set(issueResult.data!);
+    this.blockButtons.set(false);
+    await this.addToLog('tenant', log, true);
+
+    // select a vendor based on category
+    const categorySelected = this.categories.find(category => category.name === issueResult.data!.category || 'General')!;
+    this.selectedVendor = await firstValueFrom(this.service.getVendor(categorySelected.name));
+
+    // flow - contact vendor
+    const req: AskForAvailability = { UserId: tenant.id, VendorId: this.selectedVendor.id, Issue: issue, Category: categorySelected.name };
+    const message: SendMessageRequest<AskForAvailability> = { toVendorId: req.VendorId, request: req, step: 'ask for availability' };
+    const { data, error, isError } = await flowIssue.askForAvailability(message);
+    if(isError) {} // log the error
+    this.messageToLog = LogService.toEventMessageLog('Contact Vendor', data?.message!, data?.time!, Step.GetVendor);
+    await this.addToLog('event', this.messageToLog);
+    await this.addToLog('vendor', this.messageToLog, true);
+
+  }
 
   async processIssue(): Promise<void> {
 

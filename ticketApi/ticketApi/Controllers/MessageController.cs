@@ -1,5 +1,7 @@
+using System.Text.Json;
 using ErrorOr;
 using Microsoft.AspNetCore.Mvc;
+using NuGet.Protocol;
 using ticketApi.Models;
 using ticketApi.Services;
 
@@ -10,13 +12,25 @@ namespace ticketApi.Controllers
     public class MessageController : ControllerBase
     {
         private readonly DemoServices _demoServices;
+        private readonly DemoActions _demoActions;
 
-        public MessageController(DemoServices demoServices) => _demoServices = demoServices;
+        public MessageController(DemoServices demoServices, DemoActions demoActions)
+        {
+            _demoServices = demoServices;
+            _demoActions = demoActions;
+        }
 
         [HttpGet("examples")]
         public IActionResult GetExamples()
         {
             return Ok(_demoServices.GetExamples());
+        }
+
+        [HttpGet("get-vendor/{category}")]
+        public async Task<IActionResult> GetVendor(string category)
+        {
+            var vendor = await _demoActions.GetRandomVendor(category);
+            return Ok(vendor);
         }
 
         [HttpPost("process-issue")]
@@ -25,6 +39,15 @@ namespace ticketApi.Controllers
             var result = await _demoServices.ProcessIssue(request);
             return result.Match(Ok, failure => StatusCode(500, failure[0].Description));
         }
+
+        [HttpPost("send")]
+        public async Task<IActionResult> SendMessage([FromBody] Demo.Message.SendMessageRequest request)
+        {
+            var result = await _demoActions.SendMessage(request);
+            return await Task.FromResult(Ok(result));
+        }
+        
+        
 
         [HttpPost("service-availability-message")]
         public async Task<IActionResult> GetServiceAvailabilityMessage(Demo.ServiceAvailabilityRequest request)

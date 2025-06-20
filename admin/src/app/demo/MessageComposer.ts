@@ -179,7 +179,7 @@ export class MessageComposer {
     return {
       task: 'Categorize the tenant issue',
       response: issue.response,
-      deliveryTime: issue.date,
+      deliveryTime: issue.time,
       nextStep: Step.Next,
     };
   }

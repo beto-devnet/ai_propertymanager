@@ -8,6 +8,7 @@ public class DemoServices
     private readonly CategoryService _categoryService;
     private readonly GeminiService _geminiService;
     private readonly VendorService _vendorService;
+    
 
     public DemoServices(CategoryService categoryService, GeminiService geminiService, VendorService vendorService)
     {
@@ -15,7 +16,7 @@ public class DemoServices
         _geminiService = geminiService;
         _vendorService = vendorService;
     }
-
+    
     public List<Models.Models.Example> GetExamples()
     {
         return new List<Models.Models.Example>()
@@ -40,8 +41,8 @@ public class DemoServices
         
         Also, return a warm response to customer";
 
-        // var response = await _geminiService.GenerateTextAsyncFake(prompt);
-        var response = await _geminiService.ProcessTenantIssue<Gemini.IssueResponse>(prompt);
+        var response = await _geminiService.GenerateTextAsyncFake(prompt);
+        // var response = await _geminiService.ProcessTenantIssue<Gemini.IssueResponse>(prompt);
         if (response.IsError)
             return response.FirstError;
 

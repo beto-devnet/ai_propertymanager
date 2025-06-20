@@ -17,6 +17,8 @@ builder.Services.AddTransient<VendorService>();
 builder.Services.AddTransient<CategoryService>();
 builder.Services.AddTransient<TicketService>();
 builder.Services.AddTransient<DemoServices>();
+builder.Services.AddTransient<DemoActions>();
+builder.Services.AddTransient<TenantService>();
 builder.Services.AddTransient<GeminiService>(provider => new GeminiService("AIzaSyDvUWGoGCR-fMLnG2-eEUVqimt8x1DLrs4"));
 
 builder.Services.AddCors(

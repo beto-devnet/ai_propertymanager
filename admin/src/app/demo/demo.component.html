@@ -28,7 +28,7 @@
           <div class="chat-messages">
             <div class="h-32">
               <textarea [formControl]="issueControl" class="w-full p-3 resize-none rounded-2xl" rows="4"></textarea>
-              <button [ngClass]="{'disabled' : blockButtons()}"  class="relative bottom-20 float-right left-3  rounded-full w-9 issue-button" mat-ripple (click)="processIssue()" [disabled]="blockButtons()">
+              <button [ngClass]="{'disabled' : blockButtons()}"  class="relative bottom-20 float-right left-3  rounded-full w-9 issue-button" mat-ripple (click)="processIssueRefactor()" [disabled]="blockButtons()">
                 <mat-icon class="mat-icon-white mt-1">add</mat-icon>
               </button>
             </div>
@@ -88,7 +88,7 @@
         </div>
         <div class="chat-messages" #eventContainer>
           @if (issueResponse() !== null) {
-            <chat-bubble [time]="issueResponse()?.date!">
+            <chat-bubble [time]="issueResponse()?.time!">
               <div class="message-container">
                 <label>Category:</label>
                 <p>{{ issueResponse()?.category }}</p>
