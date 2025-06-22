@@ -11,7 +11,9 @@
   WaitingVendorScheduleVisit,
   VendorConfirmVisit,
   WaitingVendorConfirmIssueFixed,
-  VendorConfirmIssueFixed
+  VendorConfirmIssueFixed,
+
+  TenantConfirmIssueFixed
 }
 
 export type originType = 'Tenant' | 'Vendor' | 'Aimee';
@@ -37,4 +39,6 @@ export class FlowCoordinator {
   static VendorConfirmVisit: FlowStep = { task: 'Vendor Confirm Visit to Tenant', step: Step.VendorConfirmVisit, sender: 'Vendor', receiver: 'Aimee' };
   static WaitingVendorConfirmIssueFixed: FlowStep = { task: 'Waiting for vendor to confirm issue has fixed', step: Step.WaitingVendorConfirmIssueFixed, sender: 'Aimee', receiver: 'Vendor' };
   static VendorConfirmIssueFixed: FlowStep = { task: 'Vendor Confirm Issue has fixed', step: Step.VendorConfirmIssueFixed, sender: 'Vendor', receiver: 'Aimee' };
+
+  static WaitingTenantToConfirmIssueFixed: FlowStep = { task: 'Wating Tenant Confirm Issue has fixed', step: Step.TenantConfirmIssueFixed, sender: 'Aimee', receiver: 'Tenant' };
 }

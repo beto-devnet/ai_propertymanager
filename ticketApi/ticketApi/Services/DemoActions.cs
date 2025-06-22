@@ -64,6 +64,11 @@ public class DemoActions
             var response = await ConfirmIssueWasFixed(request);
             return new Demo.Message.ReceiveMessageResponse(response);
         }
+        else if (request.Step == "Tenant confirmed Issue was fixed")
+        {
+            var response = await TenantConfirmIssueWasFixed(request);
+            return new Demo.Message.ReceiveMessageResponse(response);
+        }
         
         
         return new Demo.Message.ReceiveMessageResponse(new {});
@@ -141,12 +146,23 @@ public class DemoActions
     
     private async Task<Demo.Models.VendorFixedIssueResponse> ConfirmIssueWasFixed(Demo.Message.ReceiveMessageRequest request)
     {
-        var prompt = $"According to the message from a vendor: {request.MessageToAime}. I need to validate id the tenant issue was successfully fixed. If the issue was fixed, then, response kindly and warm to the vendor about to work with them was good.";
+        var prompt = $"According to the message from a vendor: {request.MessageToAime}. I need to validate if the issue was successfully fixed. If the issue was fixed, then, response kindly and warm to the vendor about to work with them was good.";
         var response = await _geminiService.IssueFixedFake(prompt);
         // var response = await _geminiService.ProcessPrompt<Gemini.VendorFixedIssue>(prompt);
         if (response.IsError)
             return new Demo.Models.VendorFixedIssueResponse(false, "", DateTime.Now.ToString("MM-dd HH:mm"));
 
         return new Demo.Models.VendorFixedIssueResponse(response.Value.IssueFixed, response.Value.Message, DateTime.Now.ToString("MM-dd HH:mm"));
+    }
+    
+    private async Task<Demo.Models.TenantConfirmedFixedIssue> TenantConfirmIssueWasFixed(Demo.Message.ReceiveMessageRequest request)
+    {
+        var prompt = $"According to the message from a tenant: {request.MessageToAime}. I need to validate id the issue was successfully fixed. If the issue was fixed, then, response kindly and warm to the tenant about to inform the issue is fixed.";
+        var response = await _geminiService.IssueFixedFake(prompt);
+        // var response = await _geminiService.ProcessPrompt<Gemini.TenantFixedIssue>(prompt);
+        if (response.IsError)
+            return new Demo.Models.TenantConfirmedFixedIssue(false, "", DateTime.Now.ToString("MM-dd HH:mm"));
+
+        return new Demo.Models.TenantConfirmedFixedIssue(response.Value.IssueFixed, response.Value.Message, DateTime.Now.ToString("MM-dd HH:mm"));
     }
 }

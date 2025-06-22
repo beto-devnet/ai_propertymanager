@@ -61,6 +61,15 @@ public class GeminiService
             Message = "That's s wonderful news! Thank you so much for fixing the unit and validating it's cooling properly. We really appreciate your quick work and are glad everything is working well now. It's always a pleasure working with you."
         });
     }
+    
+    public async Task<ErrorOr<Gemini.TenantFixedIssue>> TenantConfirmedIssueFixedFake(string prompt)
+    {
+        return await Task.FromResult(new Gemini.TenantFixedIssue()
+        {
+            IssueFixed = true,
+            Message = "Great news! We've closed the ticket as requested. We're so glad to hear the issue is resolved to your satisfaction. If you have any further questions or concerns, please don't hesitate to reach out!"
+        });
+    }
 
     public async Task<ErrorOr<T>> ProcessPrompt<T>(string prompt) where T: class
     {

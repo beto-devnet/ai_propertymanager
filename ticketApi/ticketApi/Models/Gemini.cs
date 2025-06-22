@@ -61,6 +61,15 @@ public class Gemini
         public string Message { get; set; }
     }
     
+    public class TenantFixedIssue
+    {
+        [JsonPropertyName("issueFixed")]
+        public bool IssueFixed { get; set; }
+        
+        [JsonPropertyName("message")]
+        public string Message { get; set; }
+    }
+    
     public class GenerationConfig
     {
         [JsonPropertyName("responseMimeType")]

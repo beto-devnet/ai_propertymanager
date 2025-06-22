@@ -57,6 +57,18 @@
               <typing-dots></typing-dots>
             }
           </div>
+          @if(tenantMessagesLog().length > 0 ) {
+            <div id="input-text" class="input-text-container">
+              <textarea [formControl]="tenantMessageControl"
+                        placeholder="Type a message..."
+                        rows="1"
+                        class="chat-input"
+              ></textarea>
+              <button class="send-button" mat-ripple (click)="tenantToAimee()">
+                <mat-icon class="mat-icon-primary">send</mat-icon>
+              </button>
+            </div>
+          }
         </div>
       </div>
     </div>
@@ -179,7 +191,7 @@
               rows="1"
               class="chat-input"
             ></textarea>
-            <button class="send-button" mat-ripple (click)="tenantToAimee()">
+            <button class="send-button" mat-ripple (click)="vendorToAimee()">
               <mat-icon class="mat-icon-primary">send</mat-icon>
             </button>
           </div>

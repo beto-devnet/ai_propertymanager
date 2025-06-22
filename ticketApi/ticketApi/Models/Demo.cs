@@ -17,6 +17,7 @@ public class Demo
         public record TenantScheduledVisit(string message);
         public record TenantScheduledVisitResponse(DateOnly ScheduleDate, TimeOnly ScheduleTime, string Time);
         public record VendorFixedIssueResponse(bool IssueFixed, string Message, string Time): MessageBase(Message, Time);
+        public record TenantConfirmedFixedIssue(bool IssueFixed, string Message, string Time): MessageBase(Message, Time);
     }
     
     

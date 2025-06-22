@@ -83,6 +83,7 @@ export default class DemoComponent implements OnInit {
   vendors: Vendor[] = [];
   selectedVendor: Vendor = { id: 0, category: '', preferedVendor: false, companyName: '', descriptionOfServices: '', contacts: [] };
   issueControl: FormControl = new FormControl<string>('');
+  tenantMessageControl: FormControl = new FormControl<string>('');
   vendorMessageControl: FormControl = new FormControl<string>('');
   private workflow: WorkflowEngine;
   private selectedVendorId: number = 0;
@@ -124,7 +125,41 @@ export default class DemoComponent implements OnInit {
     this.issueControl.setValue(this.examples[index].issue);
   }
 
-  async tenantToAimee(): Promise<void> {
+  async tenantToAimee() {
+    const message = this.tenantMessageControl.value;
+    if(!message) {
+      return;
+    }
+
+    this.tenantMessageControl.reset();
+
+    const deliveryTime = format(new Date(), 'MM-dd HH:mm');
+    const messageLog: MessageLog = { response: message, deliveryTime, isIncoming: false, nextStep: Step.Next };
+    this.tenantMessagesLog.update(messages => [...messages, messageLog]);
+
+    const flowMessageToAimee =  new FlowEngine(this.service);
+
+    // get the last step from aimee to tenant
+    const eventLogs = [...this.eventMessagesLog()];
+    const event = eventLogs.reverse().find(ev => ev.step.sender == 'Aimee' && ev.step.receiver == 'Tenant' ) || null;
+
+    if(event === null) {
+      return;
+    }
+
+    if(event.step.step === Step.TenantConfirmIssueFixed) {
+      this.typingLog();
+      const request: ReceiveMessageRequest = { fromVendorId: this.selectedVendor.id, step: 'Tenant confirmed Issue was fixed', aimeeMessage: event.response, messageToAime: message };
+      const { data, error, isError } = await flowMessageToAimee.confirmTenantIssueWasFixed(request)
+      if(isError) { return } //log the error
+      if(!data?.issueFixed) { return } //STOP THE FLOW... find another vendor
+
+      this.messageToLog = LogService.toEventMessageLog(data?.message!, data?.time!, FlowCoordinator.ResponseToTenant);
+      await this.addToLog('event', this.messageToLog);
+      await this.addToLog('tenant', this.messageToLog);
+    }
+  }
+  async vendorToAimee(): Promise<void> {
     const message = this.vendorMessageControl.value;
     if(!message) {
       return;
@@ -202,6 +237,10 @@ export default class DemoComponent implements OnInit {
       const msg = `Hi, ${this.tenant.name}. Looks like ${this.selectedVendor.contacts[0].name} from ${this.selectedVendor.companyName} has fixed the issue. Can you confirm that we can close the ticket?`;
       const messageToTenant: MessageLog = { response: msg, deliveryTime: response.data?.time!, isIncoming: true, nextStep: Step.Next };
       this.tenantMessagesLog.update(message => [...message, messageToTenant]);
+
+      const mark = FlowCoordinator.WaitingTenantToConfirmIssueFixed;
+      const waitingEvent: EventMessageLog = { task: mark.task, response: 'Waiting for Tenant to confirm issue was fixed', step: mark, deliveryTime: time, nextStep: Step.Next };
+      await this.addToLog('event', waitingEvent);
     }
   }
 

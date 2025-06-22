@@ -1,6 +1,6 @@
 ﻿import {
   ProcessIssueStep,
-  SendMessageStep,
+  SendMessageStep, TenantConfirmedIssueWasFixed,
   TenantSendMessageStep, VendorConfirmedIssueWasFixed, VendorScheduledTimeForVisitWithTenant,
   VendorSendMessageStep
 } from './Step/ProcessIssueStep';
@@ -17,6 +17,7 @@ import {
 } from './models/InformTenantContactFromVendor';
 import { VendorScheduledVisitTimeResponse } from './models/VendorScheduledVisitTime';
 import { VendorConfirmedIssueWasFixedResponse } from './models/VendorConfirmedIssueWasFixedResponse';
+import { TenantConfirmedIssueWasFixedResponse } from './models/TenantConfirmedIssueWasFixedResponse';
 
 export class FlowEngine {
   private processIssueStep: ProcessIssueStep;
@@ -25,6 +26,7 @@ export class FlowEngine {
   private informTenantVendorReachOut: TenantSendMessageStep;
   private vendorScheduledVisit: VendorScheduledTimeForVisitWithTenant;
   private vendorConfirmFixedIssue: VendorConfirmedIssueWasFixed;
+  private tenantConfirmFixedIssue: TenantConfirmedIssueWasFixed;
 
   constructor(service: UpdateService) {
     this.processIssueStep = new ProcessIssueStep(service);
@@ -33,6 +35,7 @@ export class FlowEngine {
     this.informTenantVendorReachOut = new TenantSendMessageStep(service);
     this.vendorScheduledVisit = new VendorScheduledTimeForVisitWithTenant(service);
     this.vendorConfirmFixedIssue = new VendorConfirmedIssueWasFixed(service);
+    this.tenantConfirmFixedIssue = new TenantConfirmedIssueWasFixed(service);
   }
 
   async processIssue(req: ProcessIssueRequest): Promise<FlowEngineResponse<ProcessIssueResponse>> {
@@ -114,6 +117,21 @@ export class FlowEngine {
     let flowResponse: FlowEngineResponse<VendorConfirmedIssueWasFixedResponse> = { isError: false };
 
     const stepResult = await this.vendorConfirmFixedIssue.run(req);
+    if(stepResult.err) {
+      flowResponse.isError = true;
+      flowResponse.error = stepResult.val;
+      return flowResponse;
+    }
+
+    flowResponse.isError = false;
+    flowResponse.data = stepResult.val;
+    return flowResponse;
+  }
+
+  async confirmTenantIssueWasFixed(req: ReceiveMessageRequest): Promise<FlowEngineResponse<TenantConfirmedIssueWasFixedResponse>> {
+    let flowResponse: FlowEngineResponse<TenantConfirmedIssueWasFixedResponse> = { isError: false };
+
+    const stepResult = await this.tenantConfirmFixedIssue.run(req);
     if(stepResult.err) {
       flowResponse.isError = true;
       flowResponse.error = stepResult.val;
