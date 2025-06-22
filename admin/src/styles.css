@@ -397,3 +397,44 @@ textarea:focus {
   background: #34c759;
   border-radius: 1px;
 }
+
+.input-text-container {
+  position: sticky;
+  bottom: 0;
+  background: white;
+  padding: 10px 15px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.chat-input {
+  flex: 1;
+  border: 1px solid #e5e5e7;
+  border-radius: 20px;
+  padding: 8px 12px;
+  font-size: 16px;
+  resize: none;
+  max-height: 80px; /* approximately 3 lines */
+  min-height: 40px;
+  line-height: 20px;
+  overflow-y: auto;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.send-button {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.send-button:hover {
+  background-color: var(--primary-color-ligth);
+}

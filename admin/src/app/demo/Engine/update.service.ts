@@ -10,6 +10,8 @@ import { ServiceResponse } from './models/ServiceResponse';
 import { SendMessageRequest } from './models/SendMessageRequest';
 import { Vendor } from '../models/vendor.model';
 import { AskForAvailability, AskForAvailabilityResponse } from './models/AskForAvailability';
+import { ReceiveMessageRequest } from './models/ReceiveMessageRequest';
+import { VendorMessageAvailabilityResponse } from './models/VendorMessageAvailabilityResponse';
 
 @Injectable({
   providedIn: 'root'
@@ -61,6 +63,37 @@ export class UpdateService {
         catchError(error => of(this.mapFailure(error, Step.Next)))
       )
   }
+
+  sendMessageGeneric<TInput, TOutput>(request: SendMessageRequest<TInput>): Observable<ServiceResponse<TOutput>> {
+    const url = `${this.path}/message/send`;
+    return this.httpClient
+      .post(url, request)
+      .pipe(
+        map(result => this.mapSuccessMessage(result)),
+        catchError(error => of(this.mapFailure(error, Step.Next)))
+      )
+  }
+
+  receiveMessage(request: ReceiveMessageRequest): Observable<ServiceResponse<VendorMessageAvailabilityResponse>> {
+    const url = `${this.path}/message/receive`;
+    return this.httpClient
+      .post(url, request)
+      .pipe(
+        map(result => this.mapSuccessMessage(result)),
+        catchError(error => of(this.mapFailure(error, Step.Next)))
+      )
+  }
+
+  receiveMessageGeneric<T>(request: ReceiveMessageRequest): Observable<ServiceResponse<T>> {
+    const url = `${this.path}/message/receive`;
+    return this.httpClient
+      .post(url, request)
+      .pipe(
+        map(result => this.mapSuccessMessage(result)),
+        catchError(error => of(this.mapFailure(error, Step.Next)))
+      )
+  }
+
   private mapSuccess<T>(data: T): ServiceResponse<T> {
     return {
       data: data,

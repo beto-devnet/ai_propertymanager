@@ -6,7 +6,7 @@ import { Example } from './models/example.model';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IssueResponse } from './models/issueResponse';
 import { EventMessageLog, MessageLog } from './models/messageLog';
-import { Step } from './models/step';
+import { FlowCoordinator, Step } from './models/step';
 import {
   AimeeMessageToTenantRequest,
   AimeeMessageToTenantResponse,
@@ -180,6 +180,7 @@ export class MessageComposer {
       task: 'Categorize the tenant issue',
       response: issue.response,
       deliveryTime: issue.time,
+      step: FlowCoordinator.ResponseToTenant,
       nextStep: Step.Next,
     };
   }
@@ -189,6 +190,7 @@ export class MessageComposer {
       task: task,
       response: response,
       deliveryTime: time,
+      step: FlowCoordinator.ResponseToTenant,
       nextStep: nextStep ?? Step.Next,
     };
   }

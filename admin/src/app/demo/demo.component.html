@@ -121,25 +121,24 @@
           }
 
           @for (eventMessage of eventMessagesLog(); track $index) {
-            <chat-bubble [time]="eventMessage.deliveryTime">
-              <div class="message-container">
-                <label>Task:</label>
-                <p>{{ eventMessage.task }}</p>
-              </div>
-              <div class="message-container">
-                <label>Response:</label>
-                <p>{{ eventMessage.response }}</p>
-              </div>
-            </chat-bubble>
+            @if (eventMessage.step.step !== Step.LogIssue) {
+              <chat-bubble [time]="eventMessage.deliveryTime">
+                <div class="message-container">
+                  <label>Task:</label>
+                  <p>{{ eventMessage.task }}</p>
+                </div>
+                <div class="message-container">
+                  <label>Response:</label>
+                  <p>{{ eventMessage.response }}</p>
+                </div>
+              </chat-bubble>
+            }
           }
           @if (typingLog()) {
             <typing-dots></typing-dots>
           }
           <div #buttonElementLog id="targetLog"></div>
         </div>
-<!--        <div class="content">-->
-<!--          -->
-<!--        </div>-->
       </div>
     </div>
   </div>
@@ -173,6 +172,16 @@
             @if (typingVendor()) {
               <typing-dots></typing-dots>
             }
+          </div>
+          <div id="input-text" class="input-text-container">
+            <textarea [formControl]="vendorMessageControl"
+              placeholder="Type a message..."
+              rows="1"
+              class="chat-input"
+            ></textarea>
+            <button class="send-button" mat-ripple (click)="tenantToAimee()">
+              <mat-icon class="mat-icon-primary">send</mat-icon>
+            </button>
           </div>
         </div>
       </div>

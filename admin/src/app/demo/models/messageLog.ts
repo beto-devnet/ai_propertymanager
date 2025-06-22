@@ -1,4 +1,4 @@
-﻿import { Step } from './step';
+﻿import { FlowStep, Step } from './step';
 
 export interface MessageLog {
   isIncoming: boolean;
@@ -12,4 +12,5 @@ export interface EventMessageLog {
   response: string;
   deliveryTime: string;
   nextStep: Step;
+  step: FlowStep;
 }

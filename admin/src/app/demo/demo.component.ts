@@ -41,7 +41,7 @@ import {
 } from './models/tenant.models';
 import { FlowEngine } from './Engine/FlowEngine';
 import { ProcessIssueRequest, ProcessIssueResponse } from './Engine/models/ProcessIssue';
-import { Step } from './models/step';
+import { FlowCoordinator, Step } from './models/step';
 import { UpdateService } from './Engine/update.service';
 import { LogService } from './Engine/LogService';
 import { SendMessageRequest } from './Engine/models/SendMessageRequest';
@@ -49,6 +49,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Vendor } from './models/vendor.model';
 import { firstValueFrom } from 'rxjs';
 import { AskForAvailability } from './Engine/models/AskForAvailability';
+import { ReceiveMessageRequest } from './Engine/models/ReceiveMessageRequest';
+import { InformTenantContactFromVendor } from './Engine/models/InformTenantContactFromVendor';
+import { format } from 'date-fns';
 
 type LogType = 'event' | 'vendor' | 'tenant';
 @Component({
@@ -80,9 +83,16 @@ export default class DemoComponent implements OnInit {
   vendors: Vendor[] = [];
   selectedVendor: Vendor = { id: 0, category: '', preferedVendor: false, companyName: '', descriptionOfServices: '', contacts: [] };
   issueControl: FormControl = new FormControl<string>('');
+  vendorMessageControl: FormControl = new FormControl<string>('');
   private workflow: WorkflowEngine;
   private selectedVendorId: number = 0;
   messageToLog!: EventMessageLog;
+  private tenant =  {
+    id: 1,
+    name: 'Diane Harris',
+    phone: '123-456-789',
+    address: 'some street 123'
+  };
 
   typingLog = signal<boolean>(false);
   typingVendor = signal<boolean>(false);
@@ -114,11 +124,86 @@ export default class DemoComponent implements OnInit {
     this.issueControl.setValue(this.examples[index].issue);
   }
 
+  async tenantToAimee(): Promise<void> {
+    const message = this.vendorMessageControl.value;
+    if(!message) {
+      return;
+    }
 
-  /*
-    const issue = workflow.Categorize({})
-      ---
-  */
+    this.vendorMessageControl.reset();
+
+    const flowMessageToAimee =  new FlowEngine(this.service);
+
+    // get the last step from aimee to vendor
+    const eventLogs = [...this.eventMessagesLog()];
+    const event = eventLogs.reverse().find(ev => ev.step.sender == 'Aimee' && ev.step.receiver == 'Vendor' ) || null;
+
+    if(event === null) {
+      return;
+    }
+
+    const time = format(new Date(), 'MM-dd hh:mm');
+    const log: MessageLog = { response: message, nextStep: Step.Next, deliveryTime: time, isIncoming: false };
+    this.vendorMessagesLog.update(message => [...message, log]);
+
+    if(event.step.step == Step.SelectAndContactVendor) {
+      this.typingLog();
+      const request: ReceiveMessageRequest = { fromVendorId: this.selectedVendor.id, step: 'availability response', aimeeMessage: event.response, messageToAime: message };
+      const { data, error, isError } = await flowMessageToAimee.vendorMessageConfirmAvailability(request)
+      if(isError) { return } //log the error
+      if(!data?.isAvailable) { return } //STOP THE FLOW... find another vendor
+
+      this.messageToLog = LogService.toEventMessageLog(data?.message!, data?.time!, FlowCoordinator.VendorAvailabilityResponse);
+      await this.addToLog('event', this.messageToLog);
+
+
+      // flow - aimee to tenant. vendor will reach out
+      this.typingLog();
+      const informTenant: InformTenantContactFromVendor = { tenantId: this.tenant.id, vendorId: this.selectedVendor.id };
+      const stepResult = await flowMessageToAimee.InformTenantThatVendorReachOut({ toTenantId: this.tenant.id, step: FlowCoordinator.ResponseToTenant.task, request: informTenant })
+      if(stepResult.isError) { return } // show the error and stop the flow
+      this.messageToLog = LogService.toEventMessageLog(stepResult.data?.message!, stepResult.data?.time!, FlowCoordinator.ResponseToTenant);
+      await this.addToLog('event', this.messageToLog);
+      await this.addToLog('tenant', this.messageToLog, true);
+
+      const mark = FlowCoordinator.WaitingVendor;
+      const time =  format(new Date(), 'MM-dd hh:mm');
+      const waitingEvent: EventMessageLog = { task: mark.task, response: 'Waiting for Vendor to confirm visit time', step: mark, deliveryTime: time, nextStep: Step.Next };
+      await this.addToLog('event', waitingEvent);
+    } else if(event.step.step === Step.WaitingVendorScheduleVisit) {
+      this.typingLog();
+      const request: ReceiveMessageRequest = { fromVendorId: this.selectedVendor.id, step: 'Vendor Confirm Visit to Tenant', aimeeMessage: event.response, messageToAime: message };
+      const response = await flowMessageToAimee.getDateAndTimeForVisit(request);
+
+      if(response.isError) { return } // show the error and stop the flow
+      const time = `${response.data?.scheduleDate} at ${response.data?.scheduleTime}`
+      this.messageToLog = LogService.toEventMessageLog(`Vendor confirmed visit with tenant at ${time}`, response.data?.time!, FlowCoordinator.VendorConfirmVisit);
+      await this.addToLog('event', this.messageToLog);
+      const messageToVendor = `Hi ${this.tenant.name}. ${this.selectedVendor.contacts[0].name} from ${this.selectedVendor.companyName} mentioned he spoke with you and plans to be there ${time}`;
+      const log: MessageLog = { response:  messageToVendor, isIncoming: true, deliveryTime: response.data?.time!, nextStep: Step.Next};
+      this.tenantMessagesLog.update(message => [...message, log]);
+      const mark = FlowCoordinator.WaitingVendorConfirmIssueFixed;
+      const waitingEvent: EventMessageLog = { task: mark.task, response: 'Waiting for Vendor to confirm issue was fixed', step: mark, deliveryTime: time, nextStep: Step.Next };
+      await this.addToLog('event', waitingEvent);
+    } else if (event.step.step === Step.WaitingVendorConfirmIssueFixed) {
+      const request: ReceiveMessageRequest = { fromVendorId: this.selectedVendor.id, step: 'Vendor Confirm Issue was fixed', aimeeMessage: event.response, messageToAime: message };
+      const response = await flowMessageToAimee.confirmVendorIssueWasFixed(request);
+      if(response.isError) { return } // show the error and stop the flow
+
+      this.messageToLog = LogService.toEventMessageLog(message, response.data?.time!, FlowCoordinator.VendorResponseToAimee, Step.Next);
+      await this.addToLog('event', this.messageToLog);
+
+      this.messageToLog = LogService.toEventMessageLog(response.data?.message!, response.data?.time!, FlowCoordinator.VendorConfirmIssueFixed, Step.Next);
+      await this.addToLog('event', this.messageToLog);
+      await this.addToLog('vendor', this.messageToLog, true);
+
+      await this.sleepBetweenSteps();
+
+      const msg = `Hi, ${this.tenant.name}. Looks like ${this.selectedVendor.contacts[0].name} from ${this.selectedVendor.companyName} has fixed the issue. Can you confirm that we can close the ticket?`;
+      const messageToTenant: MessageLog = { response: msg, deliveryTime: response.data?.time!, isIncoming: true, nextStep: Step.Next };
+      this.tenantMessagesLog.update(message => [...message, messageToTenant]);
+    }
+  }
 
   async processIssueRefactor(): Promise<void> {
     if(this.issueControl.value.length === 0) {
@@ -129,22 +214,17 @@ export default class DemoComponent implements OnInit {
 
     const issue = this.issueControl.value;
     const user = 'Diane Harris';
-    const tenant =  {
-      id: 1,
-      name: 'Diane Harris',
-      phone: '123-456-789',
-      address: 'some street 123'
-    };
 
 
     const flowIssue = new FlowEngine(this.service);
 
     //flow - issue
     this.typingLog();
-    const issueReq: ProcessIssueRequest = { User: tenant.name, IssueDescription: issue };
+    const issueReq: ProcessIssueRequest = { User: this.tenant.name, IssueDescription: issue };
     const issueResult = await flowIssue.processStep<ProcessIssueResponse>(issueReq);
     const log = LogService.issueToEventMessageLog(issueResult.data!)
     this.issueResponse.set(issueResult.data!);
+    await this.addToLog('event',  log);
     this.blockButtons.set(false);
     await this.addToLog('tenant', log, true);
 
@@ -153,11 +233,12 @@ export default class DemoComponent implements OnInit {
     this.selectedVendor = await firstValueFrom(this.service.getVendor(categorySelected.name));
 
     // flow - contact vendor
-    const req: AskForAvailability = { UserId: tenant.id, VendorId: this.selectedVendor.id, Issue: issue, Category: categorySelected.name };
+    this.typingLog();
+    const req: AskForAvailability = { UserId: this.tenant.id, VendorId: this.selectedVendor.id, Issue: issue, Category: categorySelected.name };
     const message: SendMessageRequest<AskForAvailability> = { toVendorId: req.VendorId, request: req, step: 'ask for availability' };
     const { data, error, isError } = await flowIssue.askForAvailability(message);
     if(isError) {} // log the error
-    this.messageToLog = LogService.toEventMessageLog('Contact Vendor', data?.message!, data?.time!, Step.GetVendor);
+    this.messageToLog = LogService.toEventMessageLog(data?.message!, data?.time!, FlowCoordinator.GetVendor);
     await this.addToLog('event', this.messageToLog);
     await this.addToLog('vendor', this.messageToLog, true);
 
@@ -366,4 +447,5 @@ export default class DemoComponent implements OnInit {
     });
   }
 
+  protected readonly Step = Step;
 }

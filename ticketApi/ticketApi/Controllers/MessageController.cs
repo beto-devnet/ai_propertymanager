@@ -46,9 +46,16 @@ namespace ticketApi.Controllers
             var result = await _demoActions.SendMessage(request);
             return await Task.FromResult(Ok(result));
         }
-        
-        
 
+        [HttpPost("receive")]
+        public async Task<IActionResult> ReceiveMessage([FromBody] Demo.Message.ReceiveMessageRequest request)
+        {
+            var response = await _demoActions.ReceiveMessage(request);
+            return Ok(response);
+        }
+        
+        
+        #region OLD METHOD
         [HttpPost("service-availability-message")]
         public async Task<IActionResult> GetServiceAvailabilityMessage(Demo.ServiceAvailabilityRequest request)
         {
@@ -103,5 +110,7 @@ namespace ticketApi.Controllers
         {
             return Ok(await _demoServices.TenantResponseCloseTicket(request));
         }
+        
+        #endregion
     }
 }

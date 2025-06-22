@@ -35,8 +35,34 @@ public class GeminiService
                 "I'm sorry to hear that your AC is not cooling. I will make sure the right team is assigned to assist you ASAP!"
         });
     }
+    public async Task<ErrorOr<Gemini.AvailabilityResponse>> FakeAvailabilityResponse(string prompt)
+    {
+        return await Task.FromResult(new Gemini.AvailabilityResponse()
+        {
+            IsAvailable = true,
+            Response = "It is a positively response from vendor to take the job and contact to the client"
+        });
+    }
+    
+    public async Task<ErrorOr<Gemini.DateAndTime>> DateTimeScheduledVisitFake(string prompt)
+    {
+        return await Task.FromResult(new Gemini.DateAndTime()
+        {
+            ScheduleDate = DateTime.Now.AddDays(4).ToString("yyy-MM-dd"),
+            ScheduleTime = DateTime.Now.AddHours(4).ToString("HH:mm")
+        });
+    }
+    
+    public async Task<ErrorOr<Gemini.VendorFixedIssue>> IssueFixedFake(string prompt)
+    {
+        return await Task.FromResult(new Gemini.VendorFixedIssue()
+        {
+            IssueFixed = true,
+            Message = "That's s wonderful news! Thank you so much for fixing the unit and validating it's cooling properly. We really appreciate your quick work and are glad everything is working well now. It's always a pleasure working with you."
+        });
+    }
 
-    public async Task<ErrorOr<T>> ProcessTenantIssue<T>(string prompt) where T: class
+    public async Task<ErrorOr<T>> ProcessPrompt<T>(string prompt) where T: class
     {
         try
         {

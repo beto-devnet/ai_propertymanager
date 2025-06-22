@@ -9,3 +9,5 @@ export interface AskForAvailability {
 
 export interface AskForAvailabilityResponse extends BaseMessage{
 }
+
+

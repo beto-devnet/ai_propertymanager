@@ -8,6 +8,15 @@ public class Demo
     {
         public record AskForAvailability(int UserId, int VendorId, string Issue, string Category);
         public record AskForAvailabilityResponse(string Message, string Time): MessageBase(Message, Time);
+
+        public record VendorMessageAvailabilityResponse(bool IsAvailable, string Message, string Time): MessageBase(Message, Time);
+        
+        public record InformTenantContactFromVendor( int VendorId, int TenantId);
+        public record InformTenantContactFromVendorResponse(string Message, string Time): MessageBase(Message, Time);
+
+        public record TenantScheduledVisit(string message);
+        public record TenantScheduledVisitResponse(DateOnly ScheduleDate, TimeOnly ScheduleTime, string Time);
+        public record VendorFixedIssueResponse(bool IssueFixed, string Message, string Time): MessageBase(Message, Time);
     }
     
     
@@ -16,6 +25,8 @@ public class Demo
         public record SendMessageRequest(int ToVendorId , int ToTenantId , string Step, object Request);
 
         public record SendMessageResponse(object Response);
+        public record ReceiveMessageRequest(int FromVendorId , int FromTenantId , string Step, string AimeeMessage, string MessageToAime);
+        public record ReceiveMessageResponse(object Response);
     }
     
     public record ServiceAvailabilityRequest(string User, string Phone, string Category, string Issue);

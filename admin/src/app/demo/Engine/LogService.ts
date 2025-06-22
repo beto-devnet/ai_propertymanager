@@ -1,27 +1,30 @@
 ﻿import { EventMessageLog, MessageLog } from '../models/messageLog';
-import { Step } from '../models/step';
+import { FlowCoordinator, FlowStep, Step } from '../models/step';
 import { ProcessIssueResponse } from './models/ProcessIssue';
 
 export class LogService {
   static issueToEventMessageLog(req: ProcessIssueResponse): EventMessageLog {
+    const step = FlowCoordinator.issueRequestStep;
     return {
-      task: 'Categorize the tenant issue',
+      task: step.task,
       response: req.response,
       deliveryTime: req.time,
       nextStep: Step.Next,
+      step: step
     };
   }
 
-  static toEventMessageLog(task: string, response: string, time: string, nextStep?: Step): EventMessageLog {
+  static toEventMessageLog(response: string, time: string, step: FlowStep, nextStep?: Step): EventMessageLog {
     return {
-      task: task,
+      task: step.task,
       response: response,
       deliveryTime: time,
+      step: step,
       nextStep: nextStep ?? Step.Next,
     };
   }
 
-  toMessageLog(eventMessage: EventMessageLog, isIncoming: boolean = false): MessageLog {
+  static toMessageLog(eventMessage: EventMessageLog, isIncoming: boolean = false): MessageLog {
     return {
       isIncoming: isIncoming,
       response: eventMessage.response,

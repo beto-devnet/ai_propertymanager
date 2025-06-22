@@ -34,6 +34,33 @@ public class Gemini
         public string Category { get; set; }
     }
     
+    public class AvailabilityResponse
+    {
+        [JsonPropertyName("response")]
+        public string Response { get; set; }
+    
+        [JsonPropertyName("isAvailable")]
+        public bool IsAvailable { get; set; }
+    }
+    
+    public class DateAndTime
+    {
+        [JsonPropertyName("scheduleDate")]
+        public string ScheduleDate { get; set; }
+    
+        [JsonPropertyName("scheduleTime")]
+        public string ScheduleTime { get; set; }
+    }
+    
+    public class VendorFixedIssue
+    {
+        [JsonPropertyName("issueFixed")]
+        public bool IssueFixed { get; set; }
+        
+        [JsonPropertyName("message")]
+        public string Message { get; set; }
+    }
+    
     public class GenerationConfig
     {
         [JsonPropertyName("responseMimeType")]
