@@ -10,7 +10,7 @@ import { NgClass } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div [ngClass]="isIncoming() ? 'sent' : 'received'" class="message">
-      <div class="message-bubble width-90">
+      <div class="message-bubble" [ngClass]="isEventLog() ? 'width-full' : 'width-90'">
         <ng-content></ng-content>
       </div>
     </div>
@@ -20,5 +20,6 @@ import { NgClass } from '@angular/common';
 })
 export class ChatBubbleComponent {
   isIncoming: InputSignal<boolean> = input(false);
+  isEventLog: InputSignal<boolean> = input(false);
   time: InputSignal<string> = input("00:00:00");
 }

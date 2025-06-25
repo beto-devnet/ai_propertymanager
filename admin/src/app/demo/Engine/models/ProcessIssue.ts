@@ -1,5 +1,5 @@
 ﻿export interface ProcessIssueRequest {
-  User: string;
+  UserId: number;
   IssueDescription: string;
 }
 
@@ -8,6 +8,7 @@ export interface ProcessIssueResponse {
   issue: string;
   tenantName: string;
   phone: string;
+  address: string;
   nextStep: string;
   response: string;
   time: string;

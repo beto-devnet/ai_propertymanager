@@ -21,6 +21,7 @@ import {
   VendorAvailabilityResponse,
   VendorMessageToAgent
 } from './models/tenant.models';
+import { Tenant } from './models/Tenant';
 
 @Injectable({
   providedIn: 'root'

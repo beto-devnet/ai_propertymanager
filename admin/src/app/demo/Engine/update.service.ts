@@ -12,6 +12,7 @@ import { Vendor } from '../models/vendor.model';
 import { AskForAvailability, AskForAvailabilityResponse } from './models/AskForAvailability';
 import { ReceiveMessageRequest } from './models/ReceiveMessageRequest';
 import { VendorMessageAvailabilityResponse } from './models/VendorMessageAvailabilityResponse';
+import { Tenant } from '../models/Tenant';
 
 @Injectable({
   providedIn: 'root'
@@ -22,6 +23,11 @@ export class UpdateService {
   private httpClient: HttpClient = inject(HttpClient);
 
   constructor() {
+  }
+
+  getRandomTenant(): Observable<Tenant> {
+    const url = `${this.path}/message/randon-tenant`;
+    return this.httpClient.get<Tenant>(url);
   }
 
   getIssues(): Observable<Example[]> {

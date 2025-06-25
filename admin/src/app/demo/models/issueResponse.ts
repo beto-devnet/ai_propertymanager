@@ -5,5 +5,6 @@ export interface IssueResponse extends MessageResponseBase {
   issue: string;
   tenantName: string;
   phone: string;
+  address: string;
   nextStep: string;
 }

@@ -8,13 +8,15 @@ public class DemoServices
     private readonly CategoryService _categoryService;
     private readonly GeminiService _geminiService;
     private readonly VendorService _vendorService;
+    private readonly TenantService _tenatService;
     
 
-    public DemoServices(CategoryService categoryService, GeminiService geminiService, VendorService vendorService)
+    public DemoServices(CategoryService categoryService, GeminiService geminiService, VendorService vendorService, TenantService tenatService)
     {
         _categoryService = categoryService;
         _geminiService = geminiService;
         _vendorService = vendorService;
+        _tenatService = tenatService;
     }
     
     public List<Models.Models.Example> GetExamples()
@@ -29,6 +31,8 @@ public class DemoServices
 
     public async Task<ErrorOr<IssueResponseFull>> ProcessIssue(Models.Models.AssistantRequest request)
     {
+        var tenant =  _tenatService.GetTenants().First(x => x.Id == request.UserId);
+        
         var categories = "";
         foreach (var category in _categoryService.Categories)
             categories += $"- {category.Name} \n";
@@ -41,12 +45,12 @@ public class DemoServices
         
         Also, return a warm response to customer";
 
-        // var response = await _geminiService.GenerateTextAsyncFake(prompt);
-        var response = await _geminiService.ProcessPrompt<Gemini.IssueResponse>(prompt);
+        var response = await _geminiService.GenerateTextAsyncFake(prompt);
+        // var response = await _geminiService.ProcessPrompt<Gemini.IssueResponse>(prompt);
         if (response.IsError)
             return response.FirstError;
 
-        var responseFull = new IssueResponseFull(response.Value.Category, request.IssueDescription, request.User, "123-456-4560", "Next Step");
+        var responseFull = new IssueResponseFull(response.Value.Category, request.IssueDescription, tenant.Name, tenant.Phone, tenant.Address, "Next Step");
         responseFull.SetDate();
         responseFull.SetResponse(response.Value.Response);
         

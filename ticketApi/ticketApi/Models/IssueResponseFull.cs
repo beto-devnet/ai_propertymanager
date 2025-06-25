@@ -15,11 +15,12 @@ public class MessageResponseBase: AiMessageResponse
     public void SetDate() => Time = DateTime.Now.ToString("MM-dd HH:mm");
 }
 
-public class IssueResponseFull(string category, string issue, string tenantName, string phone, string step): MessageResponseBase
+public class IssueResponseFull(string category, string issue, string tenantName, string phone, string address, string step): MessageResponseBase
 {
     public string Category { get; init; } = category; 
     public string Issue { get; init; } = issue; 
     public string TenantName { get; init; } = tenantName; 
     public string Phone { get; init; } = phone; 
+    public string Address { get; init; } = address; 
     public string Step { get; init; } = step; 
 }

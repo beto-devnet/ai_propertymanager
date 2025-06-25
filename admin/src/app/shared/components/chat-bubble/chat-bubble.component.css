@@ -31,6 +31,10 @@
   max-width: 90%;
 }
 
+.message-bubble.width-full {
+  width: 100%;
+}
+
 .message-bubble.width-70 {
   max-width: 70%;
 }

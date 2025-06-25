@@ -13,32 +13,6 @@ import { EventMessageLog, MessageLog } from './models/messageLog';
 import { IssueResponse } from './models/issueResponse';
 import { TypingDotsComponent } from '../shared/components/typing-dots/typing-dots.component';
 import { MessageComposer } from './MessageComposer';
-import { WorkflowEngine } from './workflow/WorkflowEngine';
-import {
-  ContactToVendorStep,
-  ReceiveMessage,
-  SendMessage,
-  TenantRequest,
-  VendorAvailabilityResponseStep
-} from './workflow/steps/WorkflowSteps';
-import { IssueRequest } from './models/issueRequest';
-import { IWorkflowResult, WorkflowContext } from './workflow/WorkflowContext';
-import {
-  AimeeMessageToTenantRequest,
-  AimeeMessageToTenantResponse,
-  InformTenantVendorContact,
-  InformTenantVendorContactResponse,
-  MessageToTenantCloseTicketRequest,
-  MessageToTenantCloseTicketResponse,
-  ReplyToVendorIssueFixedRequest,
-  ReplyToVendorIssueFixedResponse,
-  ServiceAvailabilityMessageRequest,
-  ServiceAvailabilityMessageResponse,
-  TenantResponseToCloseTicketRequest,
-  TenantResponseToCloseTicketResponse,
-  VendorAvailabilityResponse,
-  VendorMessageToAgent
-} from './models/tenant.models';
 import { FlowEngine } from './Engine/FlowEngine';
 import { ProcessIssueRequest, ProcessIssueResponse } from './Engine/models/ProcessIssue';
 import { FlowCoordinator, Step } from './models/step';
@@ -52,6 +26,11 @@ import { AskForAvailability } from './Engine/models/AskForAvailability';
 import { ReceiveMessageRequest } from './Engine/models/ReceiveMessageRequest';
 import { InformTenantContactFromVendor } from './Engine/models/InformTenantContactFromVendor';
 import { format } from 'date-fns';
+import { Steps } from './Flow/Step';
+import { Coordinator } from './Flow/Coordinator';
+import { Tenant } from './models/Tenant';
+import { EvetLogBubbleComponent } from '../shared/components/evet-log-bubble/evet-log-bubble.component';
+import { DemoService } from './demo.service';
 
 type LogType = 'event' | 'vendor' | 'tenant';
 @Component({
@@ -66,6 +45,7 @@ type LogType = 'event' | 'vendor' | 'tenant';
     ChatBubbleComponent,
     NgClass,
     TypingDotsComponent,
+    EvetLogBubbleComponent
   ],
   providers: [MessageComposer],
   templateUrl: './demo.component.html',
@@ -85,10 +65,8 @@ export default class DemoComponent implements OnInit {
   issueControl: FormControl = new FormControl<string>('');
   tenantMessageControl: FormControl = new FormControl<string>('');
   vendorMessageControl: FormControl = new FormControl<string>('');
-  private workflow: WorkflowEngine;
-  private selectedVendorId: number = 0;
   messageToLog!: EventMessageLog;
-  private tenant =  {
+  tenant: Tenant =  {
     id: 1,
     name: 'Diane Harris',
     phone: '123-456-789',
@@ -106,8 +84,13 @@ export default class DemoComponent implements OnInit {
   vendorMessagesLog: WritableSignal<MessageLog []> =signal<MessageLog[]>([]);
   issueResponse: WritableSignal<IssueResponse|null> = signal<IssueResponse|null>(null);
 
+
+  // new variables
+  // private steps: Steps;
+  // private coordinator: Coordinator;
+
   constructor() {
-    this.workflow = new WorkflowEngine([]);
+    // this.coordinator = new Coordinator();
   }
 
   async ngOnInit(): Promise<void> {
@@ -117,12 +100,28 @@ export default class DemoComponent implements OnInit {
       this.examples = examples;
       this.issueControl.setValue(examples[0].issue);
     });
+    this.service.getRandomTenant().pipe(takeUntilDestroyed(this.destroyedRef$)).subscribe((tenant: Tenant) => this.tenant = tenant);
 
   }
 
   handlePageEvent(event$: PageEvent): void {
     const index = event$.pageIndex;
     this.issueControl.setValue(this.examples[index].issue);
+  }
+
+  processIssue(): void {
+    // if(this.issueControl.value.length === 0) {
+    //   return;
+    // }
+    //
+    // this.blockButtons.set(true);
+    //
+    // const issue = this.issueControl.value;
+    //
+    // // this.typingLog();
+    // const issueReq: ProcessIssueRequest = { User: this.tenant.name, IssueDescription: issue };
+    // await this.coordinator.createIssue(issueReq);
+
   }
 
   async tenantToAimee() {
@@ -159,6 +158,7 @@ export default class DemoComponent implements OnInit {
       await this.addToLog('tenant', this.messageToLog);
     }
   }
+
   async vendorToAimee(): Promise<void> {
     const message = this.vendorMessageControl.value;
     if(!message) {
@@ -177,12 +177,15 @@ export default class DemoComponent implements OnInit {
       return;
     }
 
-    const time = format(new Date(), 'MM-dd hh:mm');
+    const time = format(new Date(), 'MM-dd HH:mm');
     const log: MessageLog = { response: message, nextStep: Step.Next, deliveryTime: time, isIncoming: false };
     this.vendorMessagesLog.update(message => [...message, log]);
 
     if(event.step.step == Step.SelectAndContactVendor) {
       this.typingLog();
+      const vendorMessage: EventMessageLog = { task: 'Vendor Availability Response', response: message, deliveryTime: format(new Date(), 'MM-dd HH:mm'), step: FlowCoordinator.VendorResponseToAimee, nextStep: Step.Next };
+      await this.addToLog('event', vendorMessage);
+
       const request: ReceiveMessageRequest = { fromVendorId: this.selectedVendor.id, step: 'availability response', aimeeMessage: event.response, messageToAime: message };
       const { data, error, isError } = await flowMessageToAimee.vendorMessageConfirmAvailability(request)
       if(isError) { return } //log the error
@@ -202,25 +205,33 @@ export default class DemoComponent implements OnInit {
       await this.addToLog('tenant', this.messageToLog, true);
 
       const mark = FlowCoordinator.WaitingVendor;
-      const time =  format(new Date(), 'MM-dd hh:mm');
-      const waitingEvent: EventMessageLog = { task: mark.task, response: 'Waiting for Vendor to confirm visit time', step: mark, deliveryTime: time, nextStep: Step.Next };
+      const time =  format(new Date(), 'MM-dd HH:mm');
+      const waitingEvent: EventMessageLog = { task: mark.task, response: 'Waiting for Vendor to confirm visit time', step: mark, deliveryTime: time, nextStep: Step.Waiting };
       await this.addToLog('event', waitingEvent);
-    } else if(event.step.step === Step.WaitingVendorScheduleVisit) {
+    }
+    else if(event.step.step === Step.WaitingVendorScheduleVisit) {
       this.typingLog();
+      const vendorMessage: EventMessageLog = { task: 'Vendor Visit Response', response: message, deliveryTime: format(new Date(), 'MM-dd HH:mm'), step: FlowCoordinator.VendorResponseToAimee, nextStep: Step.Next };
+      await this.addToLog('event', vendorMessage);
+
       const request: ReceiveMessageRequest = { fromVendorId: this.selectedVendor.id, step: 'Vendor Confirm Visit to Tenant', aimeeMessage: event.response, messageToAime: message };
       const response = await flowMessageToAimee.getDateAndTimeForVisit(request);
 
       if(response.isError) { return } // show the error and stop the flow
-      const time = `${response.data?.scheduleDate} at ${response.data?.scheduleTime}`
-      this.messageToLog = LogService.toEventMessageLog(`Vendor confirmed visit with tenant at ${time}`, response.data?.time!, FlowCoordinator.VendorConfirmVisit);
+      const time = `${response.data?.scheduleDate} ${response.data?.scheduleTime}`
+      const hour = format(new Date(), 'MM-dd HH:mm');
+      this.messageToLog = LogService.toEventMessageLog(`Vendor confirmed visit with tenant at ${time}`, hour, FlowCoordinator.VendorConfirmVisit);
       await this.addToLog('event', this.messageToLog);
       const messageToVendor = `Hi ${this.tenant.name}. ${this.selectedVendor.contacts[0].name} from ${this.selectedVendor.companyName} mentioned he spoke with you and plans to be there ${time}`;
       const log: MessageLog = { response:  messageToVendor, isIncoming: true, deliveryTime: response.data?.time!, nextStep: Step.Next};
       this.tenantMessagesLog.update(message => [...message, log]);
+
+
       const mark = FlowCoordinator.WaitingVendorConfirmIssueFixed;
-      const waitingEvent: EventMessageLog = { task: mark.task, response: 'Waiting for Vendor to confirm issue was fixed', step: mark, deliveryTime: time, nextStep: Step.Next };
+      const waitingEvent: EventMessageLog = { task: mark.task, response: 'Waiting for Vendor to confirm issue was fixed', step: mark, deliveryTime: hour, nextStep: Step.Waiting };
       await this.addToLog('event', waitingEvent);
-    } else if (event.step.step === Step.WaitingVendorConfirmIssueFixed) {
+    }
+    else if (event.step.step === Step.WaitingVendorConfirmIssueFixed) {
       const request: ReceiveMessageRequest = { fromVendorId: this.selectedVendor.id, step: 'Vendor Confirm Issue was fixed', aimeeMessage: event.response, messageToAime: message };
       const response = await flowMessageToAimee.confirmVendorIssueWasFixed(request);
       if(response.isError) { return } // show the error and stop the flow
@@ -239,7 +250,7 @@ export default class DemoComponent implements OnInit {
       this.tenantMessagesLog.update(message => [...message, messageToTenant]);
 
       const mark = FlowCoordinator.WaitingTenantToConfirmIssueFixed;
-      const waitingEvent: EventMessageLog = { task: mark.task, response: 'Waiting for Tenant to confirm issue was fixed', step: mark, deliveryTime: time, nextStep: Step.Next };
+      const waitingEvent: EventMessageLog = { task: mark.task, response: 'Waiting for Tenant to confirm issue was fixed', step: mark, deliveryTime: time, nextStep: Step.Waiting };
       await this.addToLog('event', waitingEvent);
     }
   }
@@ -252,14 +263,12 @@ export default class DemoComponent implements OnInit {
     this.blockButtons.set(true);
 
     const issue = this.issueControl.value;
-    const user = 'Diane Harris';
-
 
     const flowIssue = new FlowEngine(this.service);
 
     //flow - issue
     this.typingLog();
-    const issueReq: ProcessIssueRequest = { User: this.tenant.name, IssueDescription: issue };
+    const issueReq: ProcessIssueRequest = { UserId: this.tenant.id, IssueDescription: issue };
     const issueResult = await flowIssue.processStep<ProcessIssueResponse>(issueReq);
     const log = LogService.issueToEventMessageLog(issueResult.data!)
     this.issueResponse.set(issueResult.data!);
@@ -268,8 +277,10 @@ export default class DemoComponent implements OnInit {
     await this.addToLog('tenant', log, true);
 
     // select a vendor based on category
-    const categorySelected = this.categories.find(category => category.name === issueResult.data!.category || 'General')!;
+    const categorySelected: Category = this.categories.find(category => category.name.trim().toLowerCase() === issueResult.data!.category.trim().toLowerCase()) || this.categories[0];
     this.selectedVendor = await firstValueFrom(this.service.getVendor(categorySelected.name));
+    const vendorSelectedMessage: EventMessageLog = { task: 'Vendor Selected', step: FlowCoordinator.SelectingVendor, deliveryTime: format(new Date(), 'MM-dd HH:mm'), response: `Selected vendor is ${this.selectedVendor.contacts[0].name} from ${this.selectedVendor.companyName}`, nextStep: Step.Next };
+    this.eventMessagesLog.update((events) => [...events, vendorSelectedMessage]);
 
     // flow - contact vendor
     this.typingLog();
@@ -281,168 +292,11 @@ export default class DemoComponent implements OnInit {
     await this.addToLog('event', this.messageToLog);
     await this.addToLog('vendor', this.messageToLog, true);
 
-  }
+    const mark = FlowCoordinator.WaitingVendorAvailability;
+    const time =  format(new Date(), 'MM-dd HH:mm');
+    const waitingEvent: EventMessageLog = { task: mark.task, response: 'Waiting for Vendor to confirm their availability to attend this job', step: mark, deliveryTime: time, nextStep: Step.Waiting };
+    await this.addToLog('event', waitingEvent);
 
-  async processIssue(): Promise<void> {
-
-    if(this.issueControl.value.length === 0) {
-      return;
-    }
-
-    this.blockButtons.set(true);
-
-    const issue = this.issueControl.value;
-    const user = 'Diane Harris';
-
-    // Tenant Request - step
-    const context: WorkflowContext<IssueRequest> = new WorkflowContext({ IssueDescription: issue, User: user });
-    const tenantRequestStep: TenantRequest = new TenantRequest(context, this.messageComposer);
-    const tenantIssueStep = await this.workflow.executeWorkflow<IssueResponse>(tenantRequestStep);
-    if(!tenantIssueStep.isSuccess){
-      this.issueProcessError.set(true);
-      this.blockButtons.set(false);
-      return;
-    }
-
-    const messageTenantIssueResponse: EventMessageLog = this.messageComposer.issueToEventMessageLog(tenantIssueStep.data!);
-    this.issueResponse.set(tenantIssueStep.data!);
-    this.blockButtons.set(false);
-    await this.addToLog('tenant', messageTenantIssueResponse, true);
-
-    await this.sleepBetweenSteps();
-    // contact to a vendor - step
-    this.typingLog.set(true);
-    const category = tenantIssueStep.data?.category || 'General';
-    const messageRequest: ServiceAvailabilityMessageRequest = { user: user, phone: '123-456-7890', category:  category, issue: issue }
-    const messageAvailabilityRequestContext: WorkflowContext<ServiceAvailabilityMessageRequest> = new WorkflowContext(messageRequest);
-    const contactToVendorStep = new ContactToVendorStep(messageAvailabilityRequestContext, this.messageComposer);
-    const messageRequestResult = await this.workflow.executeWorkflow<ServiceAvailabilityMessageResponse>(contactToVendorStep);
-
-    if(!messageRequestResult.isSuccess) {
-      console.error(messageRequestResult.message);
-      this.blockButtons.set(false);
-      this.typingLog.set(false);
-      return;
-    }
-
-    this.selectedVendorId = messageRequestResult.data!.vendorId;
-    this.messageToLog = this.messageComposer.toEventMessageLog('Select and contact Vendor', messageRequestResult.data?.message!,  messageRequestResult.data?.time!);
-    await this.addToLog('event', this.messageToLog);
-    await this.addToLog('vendor', this.messageToLog, true)
-
-
-    // get vendor availability response
-    await this.sleepBetweenSteps();
-    this.typingVendor.set(true);
-    const vendorAvailabilityContext: WorkflowContext<any> = new WorkflowContext(null);
-    const vendorAvailabilityResponseStep = new VendorAvailabilityResponseStep(vendorAvailabilityContext, this.messageComposer);
-    const availabilityResult = await this.workflow.executeWorkflow<VendorAvailabilityResponse>(vendorAvailabilityResponseStep);
-    if(!availabilityResult.isSuccess) {
-      this.blockButtons.set(false);
-      return;
-    }
-    this.messageToLog = this.messageComposer.toEventMessageLog('Get Vendor availability response', availabilityResult.data?.message!,  availabilityResult.data?.time!);
-    await this.addToLog('vendor', this.messageToLog);
-    await this.addToLog('event', this.messageToLog);
-
-
-    // response positively from vendor
-    await this.sleepBetweenSteps();
-    this.typingLog.set(true);
-    const availabilityVendor: VendorAvailabilityResponse = availabilityResult.data!;
-    if(availabilityVendor.isAvailable) {
-      const updateContext: WorkflowContext<InformTenantVendorContact> = new WorkflowContext({ user: user, tenant: '', vendorId: this.selectedVendorId });
-      const updateTenantTicket = new SendMessage<InformTenantVendorContact, InformTenantVendorContactResponse>(updateContext);
-      const updateTenantTicketResult: IWorkflowResult<InformTenantVendorContactResponse> = await updateTenantTicket.execute(this.messageComposer.updateTenantTicket);
-
-      if(!updateTenantTicketResult.isSuccess){
-        this.blockButtons.set(false);
-        return;
-      }
-
-      this.messageToLog = this.messageComposer.toEventMessageLog('Update Tenant Ticket with Vendor response', updateTenantTicketResult.data?.message!,  updateTenantTicketResult.data?.time!);
-      await this.addToLog('event', this.messageToLog);
-      await this.addToLog('tenant', this.messageToLog, true);
-    }
-
-    // simulate Vendor let us know visit confirmation
-    await this.sleepBetweenSteps();
-    this.typingVendor.set(true);
-    const confirmationVisitTimeContext = new WorkflowContext<any>(null);
-    const confirmationVisitTimeStep = new ReceiveMessage<any, VendorMessageToAgent>(confirmationVisitTimeContext)
-    const confirmationVisitTimeResult = await confirmationVisitTimeStep.execute(this.messageComposer.vendorIncomingMessageConfirmationVisit);
-
-    if(!confirmationVisitTimeResult.isSuccess){
-      this.blockButtons.set(false);
-      return;
-    }
-
-    this.messageToLog = this.messageComposer.toEventMessageLog('Vendor Confirm Visit time', confirmationVisitTimeResult.data?.message!,  confirmationVisitTimeResult.data?.time!);
-    await this.addToLog('vendor', this.messageToLog, true);
-    await this.addToLog('event', this.messageToLog);
-
-
-    //inform Tenant about visit time
-    await this.sleepBetweenSteps();
-    this.typingLog.set(true);
-    const visitTimeContext: WorkflowContext<AimeeMessageToTenantRequest> = new WorkflowContext({ user: user, vendorId: this.selectedVendorId, scheduleTime: '4pm' });
-    const visitTimeStep = new SendMessage<AimeeMessageToTenantRequest, AimeeMessageToTenantResponse>(visitTimeContext);
-    const visitTimeResult = await visitTimeStep.execute(this.messageComposer.aimeeMessageToTenantAboutVisitTime);
-
-    if(!visitTimeResult.isSuccess){
-      return;
-    }
-
-    this.messageToLog = this.messageComposer.toEventMessageLog('Ticket Status Update', visitTimeResult.data?.message!,  visitTimeResult.data?.time!);
-    await this.addToLog('event', this.messageToLog, true);
-    await this.addToLog('tenant', this.messageToLog);
-
-
-    //Aimee to vendor - response issue fixed
-    await this.sleepBetweenSteps();
-    this.typingLog.set(true);
-    const aimeeResponseVendorContext: WorkflowContext<ReplyToVendorIssueFixedRequest> = new WorkflowContext({ vendorId: this.selectedVendorId });
-    const aimeeResponseVendorStep = new SendMessage<ReplyToVendorIssueFixedRequest, ReplyToVendorIssueFixedResponse>(aimeeResponseVendorContext);
-    const aimeeResponseVendorResult = await aimeeResponseVendorStep.execute(this.messageComposer.IssueFixedResponse);
-
-    if(!aimeeResponseVendorResult.isSuccess){
-      return;
-    }
-
-    this.messageToLog = this.messageComposer.toEventMessageLog('Reply to vendor', aimeeResponseVendorResult.data?.message!,  aimeeResponseVendorResult.data?.time!);
-    await this.addToLog('event', this.messageToLog);
-    await this.addToLog('vendor', this.messageToLog, true);
-
-    //Aimee to tenant - ask close ticket
-    await this.sleepBetweenSteps();
-    this.typingLog.set(true);
-    const aimeeResponseTenantCloseTicketContext: WorkflowContext<MessageToTenantCloseTicketRequest> = new WorkflowContext({ vendorId: this.selectedVendorId, user: user });
-    const aimeeResponseTenantCloseTicketStep = new SendMessage<MessageToTenantCloseTicketRequest, MessageToTenantCloseTicketResponse>(aimeeResponseTenantCloseTicketContext);
-    const aimeeResponseTenantCloseTicketResult = await aimeeResponseTenantCloseTicketStep.execute(this.messageComposer.MessageToCloseTicket);
-
-    if(!aimeeResponseTenantCloseTicketResult.isSuccess){
-      return;
-    }
-
-    this.messageToLog = this.messageComposer.toEventMessageLog('Reply to vendor', aimeeResponseTenantCloseTicketResult.data?.message!,  aimeeResponseTenantCloseTicketResult.data?.time!);
-    await this.addToLog('event', this.messageToLog);
-    await this.addToLog('tenant', this.messageToLog, true);
-
-
-    //Tenant to Aimee - close ticket
-    await this.sleepBetweenSteps();
-    this.typingTenant.set(true);
-    const tenantCloseTicketContext: WorkflowContext<TenantResponseToCloseTicketRequest> = new WorkflowContext({ canClose: true, message: 'Hi Aimee. Yes I confirm the AC is running again. You can close the ticket', user: user });
-    const tenantCloseTicketStep = new SendMessage<TenantResponseToCloseTicketRequest, TenantResponseToCloseTicketResponse>(tenantCloseTicketContext);
-    const tenantCloseTicketResult = await tenantCloseTicketStep.execute(this.messageComposer.TenantResponseCloseTicket);
-
-    if(!tenantCloseTicketResult.isSuccess){
-      return;
-    }
-
-    this.messageToLog = this.messageComposer.toEventMessageLog('Tenant Confirm close ticket', tenantCloseTicketResult.data?.message!,  tenantCloseTicketResult.data?.time!);
-    await this.addToLog('tenant', this.messageToLog, true);
-    await this.addToLog('event', this.messageToLog);
   }
 
   private async addToLog(log: LogType, event: EventMessageLog, isIncoming: boolean = false) {

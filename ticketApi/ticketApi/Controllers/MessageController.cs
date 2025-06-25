@@ -20,6 +20,13 @@ namespace ticketApi.Controllers
             _demoActions = demoActions;
         }
 
+        [HttpGet("randon-tenant")]
+        public async Task<IActionResult> GetRandomTenant()
+        {
+            var tenant = _demoActions.GetRandomTenant();
+            return await Task.FromResult(Ok(tenant));
+        }
+        
         [HttpGet("examples")]
         public IActionResult GetExamples()
         {

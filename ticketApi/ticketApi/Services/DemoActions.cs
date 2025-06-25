@@ -18,6 +18,15 @@ public class DemoActions
         _vendorService = vendorService;
         _tenantService = tenantService;
     }
+
+    public Models.Models.Tenant GetRandomTenant()
+    {
+        var tenants = _tenantService.GetTenants();
+        var random = new Random();
+        var randomIndex = random.Next(tenants.Count);
+        
+        return tenants[randomIndex];
+    }
     
     public async Task<Demo.Message.SendMessageResponse> SendMessage(Demo.Message.SendMessageRequest request)
     {
@@ -114,8 +123,8 @@ public class DemoActions
                         
                         It is a positively response from vendor to take the job and contact to the client or is it needed to ask to other vendor for their availability";
      
-        var response = await _geminiService.ProcessPrompt<Gemini.AvailabilityResponse>(prompt);
-        // var response = await _geminiService.FakeAvailabilityResponse(prompt);
+        var response = await _geminiService.FakeAvailabilityResponse(prompt);
+        // var response = await _geminiService.ProcessPrompt<Gemini.AvailabilityResponse>(prompt);
         if (response.IsError)
             return new Demo.Models.VendorMessageAvailabilityResponse(false, "Not available", DateTime.Now.ToString("MM-dd HH:mm"));
 
@@ -129,15 +138,16 @@ public class DemoActions
         var user = _tenantService.GetTenants().First(t => t.Id == request.TenantId);
 
         var message =
-            $"Hi {user.Name}. Quick Update: {vendor.Contacts.First().Name} from {vendor.CompanyName} will be reaching you out shortly to coordinate a time that works best for both of you";
+            @$"Hi {user.Name}. 
+            Quick Update: {vendor.Contacts.First().Name} from {vendor.CompanyName} will be reaching you out shortly to coordinate a time that works best for both of you";
         return new Demo.Models.InformTenantContactFromVendorResponse(message, DateTime.Now.ToString("MM-dd HH:mm"));
     }
 
     private async Task<Demo.Models.TenantScheduledVisitResponse> DateAndTimeForVendorVisit(Demo.Message.ReceiveMessageRequest request)
     {
         var prompt = $"According to the message from a vendor: {request.MessageToAime}. I need to get the date and time of the scheduled visit with the tenant. Return the date in format yyyy-MM-dd and the time in formant HH:mm";
-        // var response = await _geminiService.DateTimeScheduledVisitFake(prompt);
-        var response = await _geminiService.ProcessPrompt<Gemini.DateAndTime>(prompt);
+        var response = await _geminiService.DateTimeScheduledVisitFake(prompt);
+        // var response = await _geminiService.ProcessPrompt<Gemini.DateAndTime>(prompt);
         if (response.IsError)
             return new Demo.Models.TenantScheduledVisitResponse(DateOnly.FromDateTime(DateTime.MaxValue), TimeOnly.FromDateTime(DateTime.MaxValue), DateTime.Now.ToString("MM-dd HH:mm"));
 
@@ -147,8 +157,8 @@ public class DemoActions
     private async Task<Demo.Models.VendorFixedIssueResponse> ConfirmIssueWasFixed(Demo.Message.ReceiveMessageRequest request)
     {
         var prompt = $"According to the message from a vendor: {request.MessageToAime}. I need to validate if the issue was successfully fixed. If the issue was fixed, then, response kindly and warm to the vendor about to work with them was good.";
-        // var response = await _geminiService.IssueFixedFake(prompt);
-        var response = await _geminiService.ProcessPrompt<Gemini.VendorFixedIssue>(prompt);
+        var response = await _geminiService.IssueFixedFake(prompt);
+        // var response = await _geminiService.ProcessPrompt<Gemini.VendorFixedIssue>(prompt);
         if (response.IsError)
             return new Demo.Models.VendorFixedIssueResponse(false, "", DateTime.Now.ToString("MM-dd HH:mm"));
 
@@ -158,8 +168,9 @@ public class DemoActions
     private async Task<Demo.Models.TenantConfirmedFixedIssue> TenantConfirmIssueWasFixed(Demo.Message.ReceiveMessageRequest request)
     {
         var prompt = $"According to the message from a tenant: {request.MessageToAime}. I need to validate id the issue was successfully fixed. If the issue was fixed, then, response kindly and warm to the tenant about to inform the issue is fixed.";
-        // var response = await _geminiService.IssueFixedFake(prompt);
-        var response = await _geminiService.ProcessPrompt<Gemini.TenantFixedIssue>(prompt);
+        
+        var response = await _geminiService.IssueFixedFake(prompt);
+        // var response = await _geminiService.ProcessPrompt<Gemini.TenantFixedIssue>(prompt);
         if (response.IsError)
             return new Demo.Models.TenantConfirmedFixedIssue(false, "", DateTime.Now.ToString("MM-dd HH:mm"));
 

@@ -4,7 +4,7 @@ public class Models
 {
     public class AssistantRequest
     {
-        public string User { get; set; } = string.Empty;
+        public int UserId { get; set; }
         public string IssueDescription { get; set; } = string.Empty;
     }
     
