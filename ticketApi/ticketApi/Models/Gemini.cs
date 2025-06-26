@@ -50,6 +50,9 @@ public class Gemini
     
         [JsonPropertyName("scheduleTime")]
         public string ScheduleTime { get; set; }
+        
+        [JsonPropertyName("isScheduled")]
+        public bool IsScheduled { get; set; }
     }
     
     public class VendorFixedIssue

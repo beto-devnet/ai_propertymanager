@@ -35,12 +35,12 @@ public class GeminiService
                 "I'm sorry to hear that your AC is not cooling. I will make sure the right team is assigned to assist you ASAP!"
         });
     }
-    public async Task<ErrorOr<Gemini.AvailabilityResponse>> FakeAvailabilityResponse(string prompt)
+    public async Task<ErrorOr<Gemini.AvailabilityResponse>> FakeAvailabilityResponse(string prompt, bool isAvailable = true)
     {
         return await Task.FromResult(new Gemini.AvailabilityResponse()
         {
-            IsAvailable = true,
-            Response = "It is a positively response from vendor to take the job and contact to the client"
+            IsAvailable = isAvailable,
+            Response = isAvailable == false ? "The vendor is not available to take the job and contact the client, it is needed to ask to other vendor for their availability." : "It is a positively response from vendor to take the job and contact to the client"
         });
     }
     
