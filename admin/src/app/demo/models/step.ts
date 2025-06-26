@@ -39,6 +39,7 @@ export class FlowCoordinator {
   static GetVendor: FlowStep = { task: 'Contact Vendor', step: Step.SelectAndContactVendor, sender: 'Aimee', receiver: 'Vendor' };
   static WaitingVendorAvailability: FlowStep = { task: 'Waiting for vendor availability', step: Step.WaitingVendorScheduleVisit, sender: 'Aimee', receiver: 'Aimee' };
   static VendorAvailabilityResponse: FlowStep = { task: 'Get Vendor Availability', step: Step.VendorResponseAvailability, sender: 'Vendor', receiver: 'Aimee', nextStep: 'Inform tenant about tenant contact' };
+  static VendorNotAvailable: FlowStep = { task: 'Get Vendor Availability', step: Step.VendorResponseAvailability, sender: 'Vendor', receiver: 'Aimee', nextStep: 'Find other vendor' };
   static WaitingVendor: FlowStep = { task: 'Waiting for vendor to confirm visit time', step: Step.WaitingVendorScheduleVisit, sender: 'Aimee', receiver: 'Vendor' };
   static VendorConfirmVisit: FlowStep = { task: 'Vendor Confirm Visit to Tenant', step: Step.VendorConfirmVisit, sender: 'Vendor', receiver: 'Aimee' };
   static WaitingVendorConfirmIssueFixed: FlowStep = { task: 'Waiting for vendor to confirm issue has fixed', step: Step.WaitingVendorConfirmIssueFixed, sender: 'Aimee', receiver: 'Vendor' };

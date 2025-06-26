@@ -3,6 +3,7 @@
 }
 
 export interface VendorScheduledVisitTimeResponse {
+  isScheduled: boolean;
   scheduleDate: string;
   scheduleTime: string;
   time: string;

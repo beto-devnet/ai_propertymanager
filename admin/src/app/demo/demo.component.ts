@@ -26,11 +26,8 @@ import { AskForAvailability } from './Engine/models/AskForAvailability';
 import { ReceiveMessageRequest } from './Engine/models/ReceiveMessageRequest';
 import { InformTenantContactFromVendor } from './Engine/models/InformTenantContactFromVendor';
 import { format } from 'date-fns';
-import { Steps } from './Flow/Step';
-import { Coordinator } from './Flow/Coordinator';
 import { Tenant } from './models/Tenant';
 import { EvetLogBubbleComponent } from '../shared/components/evet-log-bubble/evet-log-bubble.component';
-import { DemoService } from './demo.service';
 
 type LogType = 'event' | 'vendor' | 'tenant';
 @Component({
@@ -62,6 +59,7 @@ export default class DemoComponent implements OnInit {
   categories: Category[] = [];
   vendors: Vendor[] = [];
   selectedVendor: Vendor = { id: 0, category: '', preferedVendor: false, companyName: '', descriptionOfServices: '', contacts: [] };
+  selectedCategory: Category = { name: '', description: '' };
   issueControl: FormControl = new FormControl<string>('');
   tenantMessageControl: FormControl = new FormControl<string>('');
   vendorMessageControl: FormControl = new FormControl<string>('');
@@ -189,7 +187,14 @@ export default class DemoComponent implements OnInit {
       const request: ReceiveMessageRequest = { fromVendorId: this.selectedVendor.id, step: 'availability response', aimeeMessage: event.response, messageToAime: message };
       const { data, error, isError } = await flowMessageToAimee.vendorMessageConfirmAvailability(request)
       if(isError) { return } //log the error
-      if(!data?.isAvailable) { return } //STOP THE FLOW... find another vendor
+      if(!data?.isAvailable) {
+        this.messageToLog = LogService.toEventMessageLog(data?.message!, data?.time!, FlowCoordinator.VendorNotAvailable);
+        await this.addToLog('event', this.messageToLog);
+
+        await this.selectVendorBasedOnCategory();
+        await this.contactVendor(flowMessageToAimee, this.issueControl.value, this.selectedCategory.name);
+        return;
+      }
 
       this.messageToLog = LogService.toEventMessageLog(data?.message!, data?.time!, FlowCoordinator.VendorAvailabilityResponse);
       await this.addToLog('event', this.messageToLog);
@@ -218,6 +223,11 @@ export default class DemoComponent implements OnInit {
       const response = await flowMessageToAimee.getDateAndTimeForVisit(request);
 
       if(response.isError) { return } // show the error and stop the flow
+
+      // if(!response.data?.isScheduled) {
+      //
+      // }
+
       const time = `${response.data?.scheduleDate} ${response.data?.scheduleTime}`
       const hour = format(new Date(), 'MM-dd HH:mm');
       this.messageToLog = LogService.toEventMessageLog(`Vendor confirmed visit with tenant at ${time}`, hour, FlowCoordinator.VendorConfirmVisit);
@@ -265,28 +275,39 @@ export default class DemoComponent implements OnInit {
     const issue = this.issueControl.value;
 
     const flowIssue = new FlowEngine(this.service);
+    const issueResult: ProcessIssueResponse = await this.categorizeIssue(flowIssue, issue);
+    this.selectedCategory = this.categories.find(category => category.name.trim().toLowerCase() === issueResult.category.trim().toLowerCase()) || this.categories[0];
 
-    //flow - issue
+    await this.selectVendorBasedOnCategory()
+    await this.contactVendor(flowIssue, issueResult.issue, issueResult.category);
+
+  }
+
+  private async categorizeIssue(flow: FlowEngine, issue: string): Promise<ProcessIssueResponse> {
     this.typingLog();
     const issueReq: ProcessIssueRequest = { UserId: this.tenant.id, IssueDescription: issue };
-    const issueResult = await flowIssue.processStep<ProcessIssueResponse>(issueReq);
+    const issueResult = await flow.processStep<ProcessIssueResponse>(issueReq);
     const log = LogService.issueToEventMessageLog(issueResult.data!)
     this.issueResponse.set(issueResult.data!);
     await this.addToLog('event',  log);
     this.blockButtons.set(false);
     await this.addToLog('tenant', log, true);
 
-    // select a vendor based on category
-    const categorySelected: Category = this.categories.find(category => category.name.trim().toLowerCase() === issueResult.data!.category.trim().toLowerCase()) || this.categories[0];
-    this.selectedVendor = await firstValueFrom(this.service.getVendor(categorySelected.name));
+    return issueResult.data!;
+  }
+
+  private async selectVendorBasedOnCategory(): Promise<void> {
+    const category = this.selectedCategory.name;
+    this.selectedVendor = await firstValueFrom(this.service.getVendor(category));
     const vendorSelectedMessage: EventMessageLog = { task: 'Vendor Selected', step: FlowCoordinator.SelectingVendor, deliveryTime: format(new Date(), 'MM-dd HH:mm'), response: `Selected vendor is ${this.selectedVendor.contacts[0].name} from ${this.selectedVendor.companyName}`, nextStep: Step.Next };
     this.eventMessagesLog.update((events) => [...events, vendorSelectedMessage]);
+  }
 
-    // flow - contact vendor
+  private async contactVendor(flow: FlowEngine, issue: string, categoryName: string): Promise<void> {
     this.typingLog();
-    const req: AskForAvailability = { UserId: this.tenant.id, VendorId: this.selectedVendor.id, Issue: issue, Category: categorySelected.name };
+    const req: AskForAvailability = { UserId: this.tenant.id, VendorId: this.selectedVendor.id, Issue: issue, Category: categoryName };
     const message: SendMessageRequest<AskForAvailability> = { toVendorId: req.VendorId, request: req, step: 'ask for availability' };
-    const { data, error, isError } = await flowIssue.askForAvailability(message);
+    const { data, error, isError } = await flow.askForAvailability(message);
     if(isError) {} // log the error
     this.messageToLog = LogService.toEventMessageLog(data?.message!, data?.time!, FlowCoordinator.GetVendor);
     await this.addToLog('event', this.messageToLog);
@@ -296,8 +317,8 @@ export default class DemoComponent implements OnInit {
     const time =  format(new Date(), 'MM-dd HH:mm');
     const waitingEvent: EventMessageLog = { task: mark.task, response: 'Waiting for Vendor to confirm their availability to attend this job', step: mark, deliveryTime: time, nextStep: Step.Waiting };
     await this.addToLog('event', waitingEvent);
-
   }
+
 
   private async addToLog(log: LogType, event: EventMessageLog, isIncoming: boolean = false) {
     if(log === 'event') {
