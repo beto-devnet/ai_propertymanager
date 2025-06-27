@@ -29,6 +29,8 @@ export interface FlowStep {
 
 
 export class FlowCoordinator {
+  static GenericStep: FlowStep = { task: 'Generic', step: Step.Next, sender: 'Aimee', receiver: 'Tenant' };
+
   static ResponseToTenant: FlowStep = { task: 'Response to Tenant', step: Step.ResponseToTenant, sender: 'Aimee', receiver: 'Tenant' };
   static ResponseToVendor: FlowStep = { task: 'Response to Vendor', step: Step.ResponseToTenant, sender: 'Aimee', receiver: 'Vendor' };
   static SelectingVendor: FlowStep = { task: 'Vendor Selected', step: Step.Next, sender: "Aimee", receiver: 'Aimee' };

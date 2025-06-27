@@ -18,16 +18,20 @@ import { ProcessIssueRequest, ProcessIssueResponse } from './Engine/models/Proce
 import { FlowCoordinator, Step } from './models/step';
 import { UpdateService } from './Engine/update.service';
 import { LogService } from './Engine/LogService';
-import { SendMessageRequest } from './Engine/models/SendMessageRequest';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Vendor } from './models/vendor.model';
 import { firstValueFrom } from 'rxjs';
-import { AskForAvailability } from './Engine/models/AskForAvailability';
 import { ReceiveMessageRequest } from './Engine/models/ReceiveMessageRequest';
 import { InformTenantContactFromVendor } from './Engine/models/InformTenantContactFromVendor';
 import { format } from 'date-fns';
 import { Tenant } from './models/Tenant';
 import { EvetLogBubbleComponent } from '../shared/components/evet-log-bubble/evet-log-bubble.component';
+
+import { Coordinator } from './Flow/Coordinator';
+import { StepList, StepMark } from './Flow/Step';
+import { AimeeLogMessage, InputMessage, LogErrorMessage, LogsMessageType, OutputMessage } from './Flow/LogCoordinator';
+import { AskForAvailability } from './Engine/models/AskForAvailability';
+import { SendMessageRequest } from './Engine/models/SendMessageRequest';
 
 type LogType = 'event' | 'vendor' | 'tenant';
 @Component({
@@ -84,11 +88,11 @@ export default class DemoComponent implements OnInit {
 
 
   // new variables
-  // private steps: Steps;
-  // private coordinator: Coordinator;
+  private steps!: StepList;
+  private coordinator: Coordinator;
 
   constructor() {
-    // this.coordinator = new Coordinator();
+    this.coordinator = new Coordinator();
   }
 
   async ngOnInit(): Promise<void> {
@@ -98,7 +102,10 @@ export default class DemoComponent implements OnInit {
       this.examples = examples;
       this.issueControl.setValue(examples[0].issue);
     });
-    this.service.getRandomTenant().pipe(takeUntilDestroyed(this.destroyedRef$)).subscribe((tenant: Tenant) => this.tenant = tenant);
+    this.service.getRandomTenant().pipe(takeUntilDestroyed(this.destroyedRef$)).subscribe((tenant: Tenant) => {
+      this.tenant = tenant;
+      this.coordinator.Tenant = tenant;
+    });
 
   }
 
@@ -107,19 +114,47 @@ export default class DemoComponent implements OnInit {
     this.issueControl.setValue(this.examples[index].issue);
   }
 
-  processIssue(): void {
-    // if(this.issueControl.value.length === 0) {
-    //   return;
-    // }
-    //
-    // this.blockButtons.set(true);
-    //
-    // const issue = this.issueControl.value;
-    //
-    // // this.typingLog();
-    // const issueReq: ProcessIssueRequest = { User: this.tenant.name, IssueDescription: issue };
-    // await this.coordinator.createIssue(issueReq);
+  async processIssue(): Promise<void> {
+    if(this.issueControl.value.length === 0) {
+      return;
+    }
 
+    this.blockButtons.set(true);
+
+    const issue = this.issueControl.value;
+
+    this.typingLog();
+    const issueReq: ProcessIssueRequest = { UserId: this.tenant.id, IssueDescription: issue };
+    const createIssueStep = await this.coordinator.createIssue(issueReq);
+    this.issueResponse.set(createIssueStep.outputData!);
+    this.logMessages(createIssueStep.logs);
+
+    this.blockButtons.set(false);
+
+    await this.sleepBetweenSteps()
+
+    // select a vendor based on the category
+    this.selectedCategory = this.categories
+        .find(category => category.name.trim().toLowerCase() === createIssueStep.outputData?.category.trim().toLowerCase())
+        || this.categories[0];
+
+    await this.sleepBetweenSteps()
+
+    const selectedVendorStep = await this.coordinator.selectVendorBasedOnCategory(this.selectedCategory.name);
+    this.logMessages(selectedVendorStep.logs);
+
+    this.selectedVendor = selectedVendorStep.outputData!
+
+    await this.sleepBetweenSteps()
+    // ask vendor for availability
+    const availabilityStep =await this.coordinator.AskForAvailability(this.selectedCategory.name, this.selectedVendor.id, issue);
+    this.logMessages(availabilityStep.logs);
+
+
+    await this.sleepBetweenSteps();
+    // waiting for vendor to reply
+    const waiting = this.coordinator.waitForVendorAvailabilityReply();
+    this.logMessages(waiting.logs);
   }
 
   async tenantToAimee() {
@@ -157,6 +192,63 @@ export default class DemoComponent implements OnInit {
     }
   }
 
+  async tenantToAimee2(): Promise<void> {
+    const message = this.tenantMessageControl.value;
+    if(!message) {
+      return;
+    }
+
+    this.tenantMessageControl.reset();
+
+    const lastRequest = this.coordinator.LastRequestFromAimeeToTenant;
+    if(lastRequest?.mark === StepMark.WaitingTenantConfirmIssueFixed) {
+      const confirmStep = await this.coordinator.confirmWithTenantIssueFixed(message);
+      this.logMessages(confirmStep.logs);
+    }
+
+  }
+
+  async vendorToAimee2(): Promise<void> {
+    const message = this.vendorMessageControl.value;
+    if(!message) {
+      return;
+    }
+
+    this.vendorMessageControl.reset();
+
+    const lastRequest = this.coordinator.LastRequestFromAimeeToVendor;
+    if(lastRequest?.mark === StepMark.WaitingVendorAvailabilityReply) {
+
+      const vendorReplyStep = await this.coordinator.vendorReplyAvailability(this.selectedVendor.id, message);
+      if(!vendorReplyStep.outputData?.isAvailable) {
+        // find another vendor
+      }
+      else {
+        this.logMessages(vendorReplyStep.logs);
+
+        const informStep = await this.coordinator.InformTenantAboutContactWithVendor(this.selectedVendor.id)
+        this.logMessages(informStep.logs);
+
+        await this.sleepBetweenSteps(2000);
+        const waitingStep = this.coordinator.waitForVendorConfirmVisit();
+        this.logMessages(waitingStep.logs);
+      }
+    }
+    else if(lastRequest?.mark === StepMark.WaitingVendorScheduleVisit) {
+      const visitScheduledStep = await this.coordinator.vendorConfirmScheduledVisit(this.selectedVendor.id, this.selectedVendor.contacts[0].name, this.selectedVendor.companyName, message);
+      this.logMessages(visitScheduledStep.logs);
+
+      const waiting = this.coordinator.waitForVendorConfirmIssueFix();
+      this.logMessages(waiting.logs);
+    }
+    else if(lastRequest?.mark === StepMark.WaitingVendorConfirmIssueFixed) {
+      const conformationFixedStep = await this.coordinator.vendorConfirmIssueFixed(this.selectedVendor.id, message);
+      this.logMessages(conformationFixedStep.logs);
+
+      const confirmationStep = this.coordinator.waitForTenantConfirmIssueFix(this.selectedVendor.contacts[0].name, this.selectedVendor.companyName);
+      this.logMessages(confirmationStep.logs);
+    }
+  }
   async vendorToAimee(): Promise<void> {
     const message = this.vendorMessageControl.value;
     if(!message) {
@@ -319,6 +411,69 @@ export default class DemoComponent implements OnInit {
     await this.addToLog('event', waitingEvent);
   }
 
+  private logMessages(logs: LogsMessageType): void {
+    logs.forEach(async (log) => {
+      if(this.isLogMessage(log)) {
+        this.typingLog.set(true);
+        await this.sleep(2000);
+        this.typingLog.set(false);
+
+        const messageLog: EventMessageLog = LogService.LogEventMessage(log.title, log.message, log.time)
+        this.eventMessagesLog.update(messages => [...messages, messageLog]);
+        this.buttonElementLog.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+      }
+      else if(this.isOutputMessage(log)) {
+        const messageLog = LogService.LogMessage(log.message, log.time, true)
+
+        if(log.to === 'Vendor') {
+          await this.logToVendor(messageLog);
+        }
+        else if(log.to === 'Tenant') {
+          await this.logToTenant(messageLog);
+        }
+      }
+      else if(this.isInputMessage(log)) {
+        const messageLog = LogService.LogMessage(log.message, log.time, false)
+
+        if(log.from === 'Vendor') {
+          await this.logToVendor(messageLog);
+        }
+        else if(log.from === 'Tenant') {
+          await this.logToTenant(messageLog);
+        }
+      }
+    });
+  }
+
+  private async logToVendor(message: MessageLog): Promise<void> {
+    this.typingVendor.set(true);
+    await this.sleep(2000);
+    this.typingVendor.set(false);
+    this.vendorMessagesLog.update(messages => [...messages, message]);
+  }
+
+  private async logToTenant(message: MessageLog): Promise<void> {
+    this.typingTenant.set(true);
+    await this.sleep(2000);
+    this.typingTenant.set(false);
+    this.tenantMessagesLog.update(messages => [...messages, message]);
+  }
+
+  private isErrorMessage(log: any): log is LogErrorMessage {
+    return 'errorMessage' in log;
+  }
+
+  private isLogMessage(log: any): log is AimeeLogMessage {
+    return 'logMessage' in log;
+  }
+
+  private isOutputMessage(log: any): log is OutputMessage {
+    return 'outputMessage' in log;
+  }
+
+  private isInputMessage(log: any): log is InputMessage {
+    return 'inputMessage' in log;
+  }
 
   private async addToLog(log: LogType, event: EventMessageLog, isIncoming: boolean = false) {
     if(log === 'event') {
@@ -353,7 +508,7 @@ export default class DemoComponent implements OnInit {
     });
   }
 
-  async sleepBetweenSteps(ms: number = 1500): Promise<void> {
+  async sleepBetweenSteps(ms: number = 3000): Promise<void> {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve();

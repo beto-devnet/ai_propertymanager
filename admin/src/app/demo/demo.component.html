@@ -28,7 +28,7 @@
           <div class="chat-messages">
             <div class="h-32">
               <textarea [formControl]="issueControl" class="w-full p-3 resize-none rounded-2xl" rows="4"></textarea>
-              <button [ngClass]="{'disabled' : blockButtons()}"  class="relative bottom-20 float-right left-3  rounded-full w-9 issue-button" mat-ripple (click)="processIssueRefactor()" [disabled]="blockButtons()">
+              <button [ngClass]="{'disabled' : blockButtons()}"  class="relative bottom-20 float-right left-3  rounded-full w-9 issue-button" mat-ripple (click)="processIssue()" [disabled]="blockButtons()">
                 <mat-icon class="mat-icon-white mt-1">add</mat-icon>
               </button>
             </div>
@@ -64,7 +64,7 @@
                         rows="1"
                         class="chat-input"
               ></textarea>
-              <button class="send-button" mat-ripple (click)="tenantToAimee()">
+              <button class="send-button" mat-ripple (click)="tenantToAimee2()">
                 <mat-icon class="mat-icon-primary">send</mat-icon>
               </button>
             </div>
@@ -213,7 +213,7 @@
               rows="1"
               class="chat-input"
             ></textarea>
-            <button class="send-button" mat-ripple (click)="vendorToAimee()">
+            <button class="send-button" mat-ripple (click)="vendorToAimee2()">
               <mat-icon class="mat-icon-primary">send</mat-icon>
             </button>
           </div>

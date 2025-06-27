@@ -24,6 +24,25 @@ export class LogService {
     };
   }
 
+  static LogEventMessage(title: string, response: string, time: string): EventMessageLog {
+    return {
+      task: title,
+      response: response,
+      deliveryTime: time,
+      step: FlowCoordinator.GenericStep,
+      nextStep: Step.Next,
+    };
+  }
+
+  static LogMessage(message: string, time: string, isIncoming: boolean = false): MessageLog {
+    return {
+      isIncoming: isIncoming,
+      response: message,
+      deliveryTime: time,
+      nextStep: Step.Next
+    };
+  }
+
   static toMessageLog(eventMessage: EventMessageLog, isIncoming: boolean = false): MessageLog {
     return {
       isIncoming: isIncoming,
