@@ -91,62 +91,62 @@
     </mat-sidenav-content>
   </mat-sidenav-container>
 
-<!--<mat-drawer-container>-->
-<!--  <mat-drawer></mat-drawer>-->
-<!--  <mat-drawer-content>-->
-<!--    <mat-toolbar>-->
-<!--      <div class="flex justify-between w-full">-->
-<!--        <div>Admin Dashboard</div>-->
-<!--        <div class="w-12">-->
-<!--          <img ngSrc="ai-propertymanager.png" height="80" width="80" alt="AI Property Manager"/>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--    </mat-toolbar>-->
-<!--    <div class="mx-auto my-5 lg:w-1/2 md:w-3/4">-->
-<!--      <div class="mx-5">-->
-<!--        <section class="mt-8">-->
-<!--          <header class="text-xl mb-5">Ticket information</header>-->
-<!--          <pre class="block-code">-->
-<!--          <code>-->
-<!--            {{ assistantResponse().code }}-->
-<!--          </code>-->
-<!--        </pre>-->
-<!--          <div class="flex justify-end">-->
-<!--            <button mat-icon-button [cdkCopyToClipboard]="assistantResponse().code">-->
-<!--              <mat-icon>content_copy</mat-icon>-->
-<!--            </button>-->
-<!--          </div>-->
-<!--        </section>-->
+<mat-drawer-container>
+  <mat-drawer></mat-drawer>
+  <mat-drawer-content>
+    <mat-toolbar>
+      <div class="flex justify-between w-full">
+        <div>Admin Dashboard</div>
+        <div class="w-12">
+          <img ngSrc="ai-propertymanager.png" height="80" width="80" alt="AI Property Manager"/>
+        </div>
+      </div>
+    </mat-toolbar>
+    <div class="mx-auto my-5 lg:w-1/2 md:w-3/4">
+      <div class="mx-5">
+        <section class="mt-8">
+          <header class="text-xl mb-5">Ticket information</header>
+          <pre class="block-code">
+          <code>
+            {{ assistantResponse().code }}
+          </code>
+        </pre>
+          <div class="flex justify-end">
+            <button mat-icon-button [cdkCopyToClipboard]="assistantResponse().code">
+              <mat-icon>content_copy</mat-icon>
+            </button>
+          </div>
+        </section>
 
-<!--        <section class="mt-10">-->
-<!--          <div>-->
-<!--            <span class="block mb-2">Issue reporter: {{ assistantResponse().tenant }}</span>-->
-<!--            <span class="block mb-2">Property: {{ assistantResponse().property }}</span>-->
-<!--            <span class="block mb-2">Issue: {{ assistantResponse().issue }}</span>-->
-<!--            <span class="block mb-2">Issue: {{ assistantResponse().solutions }}</span>-->
-<!--          </div>-->
-<!--        </section>-->
+        <section class="mt-10">
+          <div>
+            <span class="block mb-2">Issue reporter: {{ assistantResponse().tenant }}</span>
+            <span class="block mb-2">Property: {{ assistantResponse().property }}</span>
+            <span class="block mb-2">Issue: {{ assistantResponse().issue }}</span>
+            <span class="block mb-2">Issue: {{ assistantResponse().solutions }}</span>
+          </div>
+        </section>
 
-<!--        <section class="mt-10">-->
-<!--          <div class="flex flex-col">-->
-<!--            <mat-expansion-panel  (opened)="panelOpenState.set(true)" (closed)="panelOpenState.set(false)">-->
-<!--              <mat-expansion-panel-header>-->
-<!--                <mat-panel-title>-->
-<!--                  <div class="text-xl text-center font-bold mb-3">Recommended Suppliers</div>-->
-<!--                </mat-panel-title>-->
-<!--              </mat-expansion-panel-header>-->
+        <section class="mt-10">
+          <div class="flex flex-col">
+            <mat-expansion-panel  (opened)="panelOpenState.set(true)" (closed)="panelOpenState.set(false)">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <div class="text-xl text-center font-bold mb-3">Recommended Suppliers</div>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
 
-<!--              <mat-list role="list">-->
-<!--                @for (supplier of assistantResponse().suppliers; track supplier.name) {-->
-<!--                  <mat-list-item role="listitem">-->
-<!--                    {{ supplier.name }}-->
-<!--                  </mat-list-item>-->
-<!--                }-->
-<!--              </mat-list>-->
-<!--            </mat-expansion-panel>-->
-<!--          </div>-->
-<!--        </section>-->
-<!--      </div>-->
-<!--    </div>-->
-<!--  </mat-drawer-content>-->
-<!--</mat-drawer-container>-->
+              <mat-list role="list">
+                @for (supplier of assistantResponse().suppliers; track supplier.name) {
+                  <mat-list-item role="listitem">
+                    {{ supplier.name }}
+                  </mat-list-item>
+                }
+              </mat-list>
+            </mat-expansion-panel>
+          </div>
+        </section>
+      </div>
+    </div>
+  </mat-drawer-content>
+</mat-drawer-container>

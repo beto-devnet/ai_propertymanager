@@ -1,101 +1,84 @@
-﻿import { DataNode, StepList, StepMark, StepNode, StepNodeResult } from './Step';
+﻿import {
+  StepList,
+  StepNodeResponse,
+  StepBuilder,
+  StepMark,
+  StepNodeType
+} from './Step';
 import { ProcessIssueRequest, ProcessIssueResponse } from '../Engine/models/ProcessIssue';
 import { Tenant } from '../models/Tenant';
 import { inject } from '@angular/core';
 import { UpdateService } from '../Engine/update.service';
 import { firstValueFrom } from 'rxjs';
-import { LogCoordinator, LogsMessageType } from './LogCoordinator';
 import { Vendor } from '../models/vendor.model';
 import { AskForAvailability, AskForAvailabilityResponse } from '../Engine/models/AskForAvailability';
 import { SendMessageRequest } from '../Engine/models/SendMessageRequest';
 import { ReceiveMessageRequest } from '../Engine/models/ReceiveMessageRequest';
-import { VendorAvailabilityResponse } from '../models/tenant.models';
 import {
   InformTenantContactFromVendor,
   InformTenantContactFromVendorResponse
 } from '../Engine/models/InformTenantContactFromVendor';
 import { VendorScheduledVisitTimeResponse } from '../Engine/models/VendorScheduledVisitTime';
-import { format } from 'date-fns';
 import { VendorConfirmedIssueWasFixedResponse } from '../Engine/models/VendorConfirmedIssueWasFixedResponse';
 import { TenantConfirmedIssueWasFixedResponse } from '../Engine/models/TenantConfirmedIssueWasFixedResponse';
-
-export interface CoordinatorStepResponse<T> {
-  logs: LogsMessageType;
-  isError?: boolean;
-  response?: T | null
-}
+import { VendorAvailabilityResponse } from '../models/vendorAvailabilityResponse';
+import { format } from 'date-fns';
 
 export class Coordinator {
-  private steps: StepList;
+  private regularStep: StepList;
   private tenant!: Tenant;
-  private log!: LogCoordinator;
   private service: UpdateService = inject(UpdateService);
 
   constructor() {
-    this.steps = new StepList();
-     this.log = new LogCoordinator();
+    this.regularStep = new StepList();
   }
 
   set Tenant(tenant: Tenant) {
     this.tenant = tenant;
   }
 
-  get LastRequestFromAimeeToVendor(): StepNode<any, any> | null {
-    let lastStep: StepNode<any, any> = new StepNode<any, any>('Aimee', null, null, []);
-    this.steps.getSteps().forEach(step => {
-      if(step.mark === StepMark.WaitingVendorAvailabilityReply || step.mark === StepMark.WaitingVendorScheduleVisit || step.mark === StepMark.WaitingVendorConfirmIssueFixed) {
-        lastStep = step;
-      }
-    });
-
-    return lastStep;
+  get LastMark(): StepMark {
+    return this.regularStep.getLastMark();
   }
 
-  get LastRequestFromAimeeToTenant(): StepNode<any, any> | null {
-    let lastStep: StepNode<any, any> = new StepNode<any, any>('Aimee', null, null, []);
-    this.steps.getSteps().forEach(step => {
-      if(step.mark === StepMark.WaitingTenantConfirmIssueFixed) {
-        lastStep = step;
-      }
-    });
-
-    return lastStep;
-  }
-
-  async createIssue(issue: ProcessIssueRequest): Promise<StepNodeResult<ProcessIssueRequest,ProcessIssueResponse>> {
-    const stepData: DataNode<ProcessIssueRequest> = { title: 'Tenant Request', content: '', data: issue };
-
+  async createIssue(issue: ProcessIssueRequest): Promise<StepNodeResponse<ProcessIssueRequest,ProcessIssueResponse>> {
     const result = await firstValueFrom(this.service.processIssue(issue));
 
-    if(result.isError) {
-    //   return this.handleError<ProcessIssueRequest, ProcessIssueResponse>('Vendor', stepData);
-    }
+    if(result.isError) {}
 
-    const stepResponse = result.data!;
+    const issueResponse: ProcessIssueResponse = result.data!;
 
-    const { name, address, phone, id } = this.tenant;
-    this.log.LogIssueRequest(name, address, phone, issue.IssueDescription, result.data?.category!);
-    this.log.LogOutputMessage('Tenant', result.data?.response!);
+    const builder = new StepBuilder<ProcessIssueRequest, ProcessIssueResponse>();
+    const step = builder
+      .WithTitle('Tenant Request')
+      .WithInputData(issue)
+      .WithOutputData(issueResponse)
+      .OfType(StepNodeType.Issue)
+      .build();
 
-    this.steps.addStep<ProcessIssueRequest, ProcessIssueResponse>('Vendor', stepData, stepResponse, this.log.getLogs());
-    return this.steps.getLastStep<ProcessIssueRequest, ProcessIssueResponse>();
+    step.sendMessageToTenant(issueResponse.response);
+
+    this.regularStep.addStep(step);
+    return this.regularStep.getLastStep()
   }
 
-  async selectVendorBasedOnCategory(categoryName: string): Promise<StepNodeResult<string, Vendor>> {
-    this.log.resetLogs();
+  async selectVendorBasedOnCategory(categoryName: string): Promise<StepNodeResponse<string, Vendor>> {
     const vendor = await firstValueFrom(this.service.getVendor(categoryName));
 
-    const vendorName = vendor.contacts[0].name;
-    const data: DataNode<string> = { title: 'Vendor Selection', data: categoryName, content: `The Vendor selected is ${vendorName} from ${vendor.companyName}`}
+    const builder = new StepBuilder<string, Vendor>();
+    const step = builder
+      .WithTitle('Vendor Selection')
+      .WithMessage('The Vendor selected is ' + vendor.contacts[0].name + ' from ' + vendor.companyName)
+      .WithInputData(categoryName)
+      .WithOutputData(vendor)
+      .OfType(StepNodeType.Information)
+      .build();
 
-    this.log.LogAimeeMessage(data.title, data.content);
-
-    this.steps.addStep<string, Vendor>('Aimee', data, vendor, this.log.getLogs());
-    return this.steps.getLastStep<string, Vendor>();
+    this.regularStep.addStep(step);
+    return this.regularStep.getLastStep()
   }
 
-  async AskForAvailability(categoryName: string, vendorId: number, issue: string): Promise<StepNodeResult<AskForAvailability, AskForAvailabilityResponse>> {
-    this.log.resetLogs();
+  async AskForAvailability(categoryName: string, vendorId: number, issue: string): Promise<StepNodeResponse<AskForAvailability, AskForAvailabilityResponse>> {
     const request: AskForAvailability = {
       UserId: this.tenant.id,
       Category:  categoryName,
@@ -103,164 +86,195 @@ export class Coordinator {
       Issue: issue,
     };
     const messageReq: SendMessageRequest<AskForAvailability> = { toVendorId: this.tenant.id, request: request, step: 'ask for availability' };
-    const stepResult = await firstValueFrom(this.service.sendMessage(messageReq))
 
-    if(stepResult.isError) {}
+    const result = await firstValueFrom(this.service.sendMessage(messageReq))
+    const data = result.data!;
 
-    const stepData: DataNode<AskForAvailability> = { title: 'Ask for Availability', content: stepResult.data?.message!, data: request };
+    const builder = new StepBuilder<AskForAvailability, AskForAvailabilityResponse>();
+    const step = builder
+      .WithTitle('Ask Vendor for Availability')
+      .WithMessage(data.message)
+      .WithInputData(request)
+      .WithOutputData(data)
+      .OfType(StepNodeType.Information)
+      .build();
 
-    this.log.LogAimeeMessage(stepData.title, stepData.content, 'Vendor');
-    this.log.LogOutputMessage('Vendor', stepData.content);
+    step.sendMessageToVendor(data.message);
 
-    this.steps.addStep<AskForAvailability, AskForAvailabilityResponse>('Aimee', stepData, stepResult.data!, this.log.getLogs());
-    return this.steps.getLastStep();
+    this.regularStep.addStep(step);
+    return this.regularStep.getLastStep();
   }
 
 
-  waitForVendorAvailabilityReply(): StepNodeResult<string, null> {
-    this.log.resetLogs();
+  waitForVendorAvailabilityReply(): StepNodeResponse<null, null> {
+    const builder = new StepBuilder<null, null>();
+    const step = builder
+      .WithTitle('Waiting for Vendor Reply')
+      .OfType(StepNodeType.Waiting, StepMark.WaitingVendorAvailabilityReply)
+      .build();
 
-    const data: DataNode<string> = { title: 'Waiting for Vendor Reply', content: `Waiting for vendor to reply`, data: '' };
-
-    this.log.LogAimeeMessage(data.title, data.content, 'Vendor');
-
-    this.steps.addStep<string, null>('Aimee', data, null, this.log.getLogs(), StepMark.WaitingVendorAvailabilityReply);
-    return this.steps.getLastStep<string, null>();
+    this.regularStep.addStep(step);
+    return this.regularStep.getLastStep();
   }
 
-  waitForVendorConfirmVisit(): StepNodeResult<string, null> {
-    this.log.resetLogs();
+  waitForVendorConfirmVisit(): StepNodeResponse<string, null> {
+    const builder = new StepBuilder<string, null>();
+    const step = builder
+      .WithTitle('Waiting for Vendor Confirm Visit')
+      .OfType(StepNodeType.Waiting, StepMark.WaitingVendorScheduleVisit)
+      .build();
 
-    const data: DataNode<string> = { title: 'Waiting for Vendor To confirm visit', content: `Waiting for vendor to confirm the date and time to schedule a visit with the tenant`, data: '' };
-
-    this.log.LogAimeeMessage(data.title, data.content, 'Aimee');
-
-    this.steps.addStep<string, null>('Aimee', data, null, this.log.getLogs(), StepMark.WaitingVendorScheduleVisit);
-    return this.steps.getLastStep<string, null>();
+    this.regularStep.addStep(step);
+    return this.regularStep.getLastStep();
   }
 
-  async InformTenantAboutContactWithVendor(vendorId: number): Promise<StepNodeResult<InformTenantContactFromVendor, InformTenantContactFromVendorResponse>> {
-    this.log.resetLogs();
+  async vendorReplyAvailability(vendorId: number, vendorReplyMessage: string): Promise<StepNodeResponse<string, VendorAvailabilityResponse>> {
+    const receiveMessage: ReceiveMessageRequest = { fromVendorId: vendorId, messageToAime:  vendorReplyMessage, step: 'availability response', aimeeMessage: '' };
+    const result = await firstValueFrom(this.service.receiveMessage(receiveMessage));
+    if(result.isError) {}
+    const data = result.data!;
+
+    const builder = new StepBuilder<string, VendorAvailabilityResponse>();
+    const step = builder
+      .WithTitle('Vendor Availability Reply ')
+      .WithMessage(data.message)
+      .WithInputData(vendorReplyMessage)
+      .WithOutputData(data)
+      .OfType(StepNodeType.Information)
+      .build();
+
+    step.receiveMessageFromVendor(vendorReplyMessage);
+    this.regularStep.addStep(step);
+    return this.regularStep.getLastStep();
+  }
+
+  async InformTenantAboutContactWithVendor(vendorId: number): Promise<StepNodeResponse<InformTenantContactFromVendor, InformTenantContactFromVendorResponse>> {
 
     const request: InformTenantContactFromVendor = { vendorId: vendorId, tenantId: this.tenant.id };
     const messageRequest: SendMessageRequest<InformTenantContactFromVendor> = { toTenantId: this.tenant.id, step: 'Response to Tenant', request };
     const result = await firstValueFrom(this.service.sendMessageGeneric<InformTenantContactFromVendor, InformTenantContactFromVendorResponse>(messageRequest));
 
     if(result.isError) {}
+    const data = result.data!;
+    const builder = new StepBuilder<InformTenantContactFromVendor, InformTenantContactFromVendorResponse>();
+    const step = builder
+      .WithTitle('Inform Tenant Contact From Vendor')
+      .WithMessage(data.message!)
+      .WithInputData(request)
+      .WithOutputData(data)
+      .OfType(StepNodeType.Information)
+      .build();
 
-    const data: DataNode<InformTenantContactFromVendor> = { title: 'Inform Tenant', content: 'Inform Tenant that vendor will be reaching out', data: request };
+    step.sendMessageToTenant(data.message);
+    this.regularStep.addStep(step);
+    return this.regularStep.getLastStep();
 
-
-    this.log.LogAimeeMessage(data.title, result.data?.message!);
-    this.log.LogOutputMessage('Tenant', result.data?.message!);
-
-    this.steps.addStep<InformTenantContactFromVendor, InformTenantContactFromVendorResponse>('Aimee', data, result.data!, this.log.getLogs());
-    return this.steps.getLastStep<InformTenantContactFromVendor, InformTenantContactFromVendorResponse>();
+    // const data: DataNode<InformTenantContactFromVendor> = { title: 'Inform Tenant', message: 'Inform Tenant that vendor will be reaching out', data: request };
+    //
+    //
+    // this.log.LogAimeeMessage(data.title, result.data?.message!);
+    // this.log.LogOutputMessage('Tenant', result.data?.message!);
+    //
+    // this.steps.addStep<InformTenantContactFromVendor, InformTenantContactFromVendorResponse>('Aimee', data, result.data!, this.log.getLogs());
+    // return this.steps.getLastStep<InformTenantContactFromVendor, InformTenantContactFromVendorResponse>();
   }
 
-  async vendorReplyAvailability(vendorId: number, vendorReplyMessage: string): Promise<StepNodeResult<Vendor, VendorAvailabilityResponse>> {
-    this.log.resetLogs();
-
-    const receiveMessage: ReceiveMessageRequest = { fromVendorId: vendorId, messageToAime:  vendorReplyMessage, step: 'availability response', aimeeMessage: '' };
-    const vendorReply = await firstValueFrom(this.service.receiveMessage(receiveMessage));
-    if(vendorReply.isError) {}
-
-    const data: DataNode<VendorAvailabilityResponse> = { title: 'Vendor availability reply', content: vendorReply.data?.message!, data: vendorReply.data! };
-
-    this.log.LogInputMessage('Vendor', vendorReplyMessage);
-    this.log.LogAimeeMessage(data.title, vendorReplyMessage);
-    this.log.LogAimeeMessage(data.title, vendorReply.data?.message!);
-
-    this.steps.addStep<unknown, VendorAvailabilityResponse>('Vendor', data, vendorReply.data!, this.log.getLogs());
-
-    return this.steps.getLastStep<Vendor, VendorAvailabilityResponse>();
-  }
-
-  async vendorConfirmScheduledVisit(vendorId: number, vendorName: string, vendorCompany: string, vendorMessage: string): Promise<StepNodeResult<string, VendorScheduledVisitTimeResponse>> {
-    this.log.resetLogs();
-
+  async vendorConfirmScheduledVisit(vendorId: number, vendorName: string, vendorCompany: string, vendorMessage: string): Promise<StepNodeResponse<string, VendorScheduledVisitTimeResponse>> {
     const request: ReceiveMessageRequest = { fromVendorId: vendorId, step: 'Vendor Confirm Visit to Tenant', aimeeMessage: '', messageToAime: vendorMessage };
     const result = await firstValueFrom(this.service.receiveMessageGeneric<VendorScheduledVisitTimeResponse>(request));
     if(result.isError) {}
 
-    const stepData: DataNode<string> = { title: 'Vendor Scheduled Visit', content: 'Vendor confirm a date and time visit with tenant', data: vendorMessage };
+    const data = result.data!;
+    const confirmationMessage = ``;
+    const builder = new StepBuilder<string, VendorScheduledVisitTimeResponse>();
+    const step = builder
+      .WithTitle('Vendor Confirm Visit')
+      .WithMessage('Vendor confirm a date and time visit with tenant')
+      .WithInputData(vendorMessage)
+      .WithOutputData(data)
+      .OfType(StepNodeType.Information)
+      .build();
 
-    this.log.LogInputMessage('Vendor', vendorMessage);
-    this.log.LogAimeeMessage(stepData.title, stepData.content);
+    step.receiveMessageFromVendor(vendorMessage);
 
     const date = Date.parse(`${result.data?.scheduleDate!} ${result.data?.scheduleTime!}`);
     const dateFormatted = format(new Date(date), "eeee, dd 'at' HH:mm" );
     const messageToTenant = `Hi ${this.tenant.name}. Quick update.
     ${vendorName} from ${vendorCompany} has confirmed a date and time to visit your home by ${dateFormatted}.`
-    this.log.LogOutputMessage('Tenant', messageToTenant);
 
-    this.steps.addStep<string, VendorScheduledVisitTimeResponse>('Vendor', stepData, result.data! , this.log.getLogs());
-    return this.steps.getLastStep();
+    step.sendMessageToTenant(messageToTenant);
+
+    this.regularStep.addStep(step);
+    return this.regularStep.getLastStep();
   }
 
-  waitForVendorConfirmIssueFix(): StepNodeResult<string, null> {
-    this.log.resetLogs();
+  waitForVendorConfirmIssueFix(): StepNodeResponse<string, null> {
+    const builder = new StepBuilder<string, VendorScheduledVisitTimeResponse>();
+    const step = builder
+      .WithTitle('Waiting for Vendor To confirm Issue Fixed')
+      .OfType(StepNodeType.Waiting, StepMark.WaitingVendorConfirmIssueFixed)
+      .build();
 
-    const data: DataNode<string> = { title: 'Waiting for Vendor To confirm Issue Fixed', content: `Waiting for vendor to confirm the that the issue was successfully fixed`, data: '' };
-
-    this.log.LogAimeeMessage(data.title, data.content, 'Aimee');
-
-    this.steps.addStep<string, null>('Aimee', data, null, this.log.getLogs(), StepMark.WaitingVendorConfirmIssueFixed);
-    return this.steps.getLastStep<string, null>();
+    this.regularStep.addStep(step);
+    return this.regularStep.getLastStep();
   }
 
-  async vendorConfirmIssueFixed(vendorId: number, vendorMessage: string): Promise<StepNodeResult<string, VendorConfirmedIssueWasFixedResponse>> {
-    this.log.resetLogs();
-
-    const request: ReceiveMessageRequest = { fromVendorId: vendorId, step: 'Vendor Confirm Issue Fixed', aimeeMessage: '', messageToAime: vendorMessage };
+  async vendorConfirmIssueFixed(vendorId: number, vendorMessage: string): Promise<StepNodeResponse<string, VendorConfirmedIssueWasFixedResponse>> {
+    const request: ReceiveMessageRequest = { fromVendorId: vendorId, step: 'Vendor Confirm Issue was fixed', aimeeMessage: '', messageToAime: vendorMessage };
     const result = await firstValueFrom(this.service.receiveMessageGeneric<VendorConfirmedIssueWasFixedResponse>(request));
     if(result.isError) {}
 
-    const stepData: DataNode<string> = { title: 'Vendor Confirm Issue was Fixed', content: result.data?.message!, data: vendorMessage };
+    const builder = new StepBuilder<string, VendorConfirmedIssueWasFixedResponse>();
+    const data = result.data!;
 
-    this.log.LogInputMessage('Vendor', vendorMessage);
-    this.log.LogAimeeMessage(stepData.title, stepData.content);
+    const step = builder
+      .WithTitle(request.step)
+      .WithMessage(vendorMessage)
+      .WithInputData(vendorMessage)
+      .WithOutputData(data)
+      .OfType(StepNodeType.Information)
+      .build();
 
-    this.steps.addStep<string, null>('Vendor', stepData, null, this.log.getLogs());
-    return this.steps.getLastStep<string, null>();
+    step.receiveMessageFromVendor(vendorMessage);
+    step.sendMessageToVendor(data.message);
+
+    this.regularStep.addStep(step);
+    return this.regularStep.getLastStep();
   }
 
-  waitForTenantConfirmIssueFix(vendorName: string, vendorCompany: string): StepNodeResult<string, null> {
-    this.log.resetLogs();
-
-    const data: DataNode<string> = { title: 'Waiting for Vendor To confirm Issue Fixed', content: `Waiting for vendor to confirm the that the issue was successfully fixed`, data: '' };
-
-    this.log.LogAimeeMessage(data.title, data.content, 'Aimee');
+  waitForTenantConfirmIssueFix(vendorName: string, vendorCompany: string): StepNodeResponse<string, null> {
+    const builder = new StepBuilder<string, null>();
+    const step = builder
+      .WithTitle('Waiting for Tenant To confirm Issue Fixed')
+      .OfType(StepNodeType.Waiting, StepMark.WaitingTenantConfirmIssueFixed)
+      .build();
 
     const msg = `Hi, ${this.tenant.name}. Looks like ${vendorName} from ${vendorCompany} has fixed the issue. Can you confirm that we can close the ticket?`;
-    this.log.LogOutputMessage('Tenant', msg);
-
-    this.steps.addStep<string, null>('Aimee', data, null, this.log.getLogs(), StepMark.WaitingTenantConfirmIssueFixed);
-    return this.steps.getLastStep<string, null>();
+    step.sendMessageToTenant(msg);
+    this.regularStep.addStep(step);
+    return this.regularStep.getLastStep();
   }
 
-  async confirmWithTenantIssueFixed(tenantMessage: string): Promise<StepNodeResult<string, TenantConfirmedIssueWasFixedResponse>> {
-    this.log.resetLogs();
-
-    const request: ReceiveMessageRequest = { fromTenantId: this.tenant.id, step: 'Tenant Confirm Issue Fixed', aimeeMessage: '', messageToAime: tenantMessage };
+  async confirmWithTenantIssueFixed(tenantMessage: string): Promise<StepNodeResponse<string, TenantConfirmedIssueWasFixedResponse>> {
+    const request: ReceiveMessageRequest = { fromTenantId: this.tenant.id, step: 'Tenant confirmed Issue was fixed', aimeeMessage: '', messageToAime: tenantMessage };
     const result = await firstValueFrom(this.service.receiveMessageGeneric<TenantConfirmedIssueWasFixedResponse>(request));
     if(result.isError) {}
 
-    const data: DataNode<string> = { title: 'Confirm with Tenant Issue Fixed', content: tenantMessage, data: tenantMessage };
+    const data = result.data!;
+    const builder = new StepBuilder<string, TenantConfirmedIssueWasFixedResponse>();
+    const step = builder
+      .WithTitle('Tenant Confirm Issue Fixed')
+      .WithMessage(tenantMessage)
+      .WithInputData(tenantMessage)
+      .WithOutputData(data)
+      .OfType(StepNodeType.Information)
+      .build();
 
-    this.log.LogInputMessage('Tenant', tenantMessage);
-    this.log.LogAimeeMessage(data.title, data.content);
-    this.log.LogAimeeMessage(data.title, result.data?.message!);
+    step.receiveMessageFromTenant(tenantMessage);
+    step.sendMessageToTenant(data.message);
 
-    this.steps.addStep<string, TenantConfirmedIssueWasFixedResponse>('Tenant', data, result.data!, this.log.getLogs());
-    return this.steps.getLastStep<string, null>();
+    this.regularStep.addStep(step);
+    return this.regularStep.getLastStep();
   }
-
-
-  // private handleError<TInput, TOutput>(initiator: RoleType, input: DataNode<TInput>): CoordinatorStepResponse<TOutput> {
-  //   const log: LogCoordinator = new LogCoordinator();
-  //   this.steps.addStep<TInput, null>(initiator, input, null, log.getLogs(), StepMark.None);
-  //   return { logs: log.getLogs(), response:  null, isError: true};
-  // }
 }
 

@@ -1,110 +1,96 @@
-﻿import { RoleType } from './Step';
+﻿import { RoleType, StepNodeType } from './Step';
 import { format } from 'date-fns';
+import { ProcessIssueResponse } from '../Engine/models/ProcessIssue';
 
 export interface SimpleMessage {
   message: string;
   time: string;
+  isInput: boolean;
 }
 
 export interface InputMessage extends SimpleMessage {
   from: RoleType;
-  inputMessage: boolean;
 }
 
 export interface OutputMessage extends SimpleMessage {
   to: RoleType;
-  outputMessage: boolean;
 }
 
-export interface AimeeLogMessage extends SimpleMessage {
-  sendTo: RoleType;
-  title: string;
-  logMessage: boolean;
+
+export type LogsMessageType = Array<InputMessage | OutputMessage>;
+
+export interface RenderMessageBase {
+  message: string;
+  deliveryTime: string;
+  renderType: StepNodeType;
 }
 
-export interface LogErrorMessage {
-  time: string;
-  errorMessage: string;
-  title: string;
-}
-
-export interface IssueMessage {
-  time: string;
+export interface IssueMessage extends RenderMessageBase {
   tenantName: string;
   tenantAddress: string;
   tenantPhone: string;
   issueDescription: string;
   category: string;
+  message: string;
+  deliveryTime: string;
+  readonly renderType: StepNodeType.Issue;
 }
 
+export interface EventMessageLog extends RenderMessageBase {
+  title: string;
+  message: string;
+  deliveryTime: string;
+  renderType: StepNodeType.Information;
+}
 
-export type LogsMessageType = Array<InputMessage | OutputMessage | AimeeLogMessage | LogErrorMessage | IssueMessage>;
+export interface WaitingMessageLog extends RenderMessageBase {
+  renderType: StepNodeType.Waiting;
+}
 
-export class LogCoordinator {
-
-  private historyLog: LogsMessageType = [];
-
-
-  getLogs(): LogsMessageType {
-    return this.historyLog;
+export class RenderMessage {
+  static renderIssueMessage(issue: ProcessIssueResponse): IssueMessage {
+    return {
+      tenantName: issue.tenantName,
+      tenantAddress: issue.address,
+      tenantPhone: issue.phone,
+      issueDescription: issue.issue,
+      category: issue.category,
+      message: issue.response,
+      deliveryTime: format(new Date(issue.time), 'MM-dd HH:mm'),
+      renderType: StepNodeType.Issue
+    }
   }
 
-  constructor() {
-    this.historyLog = [];
+  static renderEventMessage(title: string, message: string): EventMessageLog {
+      return {
+        title: title,
+        message: message,
+        deliveryTime: format(new Date(), 'MM-dd HH:mm'),
+        renderType: StepNodeType.Information
+      }
   }
 
-  resetLogs(): void {
-    this.historyLog = [];
-  }
-
-  LogInputMessage(from: RoleType, message: string): void  {
-    const logMessage: InputMessage = {
-      time: format(new Date(), 'MM-dd HH:mm'),
-      from: from,
+  static renderWaitingMessage(message: string): WaitingMessageLog {
+    return {
       message: message,
-      inputMessage: true
-    };
-
-    this.historyLog.push(logMessage);
+      deliveryTime: format(new Date(), 'MM-dd HH:mm'),
+      renderType: StepNodeType.Waiting
+    }
   }
 
-  LogOutputMessage(to: RoleType, message: string): void {
-    const logMessage: OutputMessage = {
-      time: format(new Date(), 'MM-dd HH:mm'),
-      to: to,
+  static renderInputMessageLog(message: string, time: string): SimpleMessage {
+    return {
+      isInput: true,
       message: message,
-      outputMessage: true
-    };
-    this.historyLog.push(logMessage);
+      time: time,
+    }
   }
 
-  LogAimeeMessage(title: string, message: string, sendTo: RoleType = 'Aimee' ): void {
-    const logMessage: AimeeLogMessage = {
-      time: format(new Date(), 'MM-dd HH:mm'),
-      sendTo: sendTo,
-      title: title,
+  static renderOutputMessageLog(message: string, time: string): SimpleMessage {
+    return {
+      isInput: false,
       message: message,
-      logMessage: true
-    };
-
-    this.historyLog.push(logMessage);
-  }
-
-  LogIssueRequest(tenantName: string, tenantAddress: string, tenantPhone: string, issueDescription: string, category: string,): void {
-    const issueMessage: IssueMessage = {
-      time: format(new Date(), 'MM-dd HH:mm'),
-      tenantName: tenantName,
-      tenantAddress: tenantAddress,
-      tenantPhone: tenantPhone,
-      issueDescription: issueDescription,
-      category: category,
-    };
-
-    this.historyLog.push(issueMessage);
-  }
-
-  LogError(message: string, title?: string): void {
-    const logMessage: LogErrorMessage = { time: format(new Date(), 'MM-dd HH:mm'), errorMessage: message, title: title || 'Error'};
-    this.historyLog.push(logMessage);
+      time: time,
+    }
   }
 }

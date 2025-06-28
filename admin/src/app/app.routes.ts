@@ -3,7 +3,8 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   {
     path: '',
-    loadComponent: () => import('./front/resident/resident.component')
+    redirectTo: '/ai-chat',
+    pathMatch: 'full'
   },
   {
     path: 'admin',

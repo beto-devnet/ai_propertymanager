@@ -1,10 +1,10 @@
-import { LogsMessageType } from './LogCoordinator';
+import {
+  InputMessage,
+  LogsMessageType,
+  OutputMessage
+} from './LogCoordinator';
+import { format } from 'date-fns';
 
-export interface DataNode<Type> {
-  title: string;
-  content: string;
-  data: Type | null;
-}
 
 export type RoleType = 'Vendor' | 'Aimee' | 'Tenant';
 export enum StepMark {
@@ -15,78 +15,204 @@ export enum StepMark {
   WaitingTenantConfirmIssueFixed
 }
 
-export class StepNode<TInput, TOutput = null> {
+export enum StepNodeType {
+  Issue,
+  Information,
+  Waiting,
+  Message,
+  Error,
+}
 
-  next?: StepNode<TInput, TOutput> | null;
-  initiator: RoleType;
-  readonly inputData?: DataNode<TInput> | null;
-  readonly outputData?: TOutput | null;
-  logs: LogsMessageType = [];
-  mark: StepMark = StepMark.None;
+export interface INode {
+  title: string;
+  message: string;
+}
 
-  constructor(initiator: RoleType = 'Aimee',
-              input: DataNode<TInput> | null,
-              output: TOutput | null = null,
-              logs: LogsMessageType,
-              mark: StepMark = StepMark.None) {
-    this.initiator = initiator;
-    this.inputData = input;
-    this.outputData = output;
-    this.logs = logs;
-    this.mark = mark;
-    this.next = null;
-  }
+export class Node implements INode {
+  title: string;
+  message: string;
 
-  getData(): TOutput | null {
-    return this.outputData || null;
-  }
-
-  hasData(): boolean {
-    return this.inputData === null;
+  constructor(title: string, message: string) {
+    this.title = title;
+    this.message = message;
   }
 }
 
-export type StepNodeResult<TInput, TOutput> = Pick<StepNode<TInput, TOutput>, 'inputData' |  'outputData' | 'logs' | 'mark'>;
+export class StepNode<TInput, TOutput> extends Node {
+
+  type: StepNodeType = StepNodeType.Information;
+  input: TInput;
+  output: TOutput;
+  next?: StepNode<TInput, TOutput> | null;
+  logs: LogsMessageType = [];
+  mark: StepMark = StepMark.None;
+
+  constructor(
+    title: string,
+    message: string,
+    type: StepNodeType,
+    input: TInput,
+    output: TOutput,
+    mark: StepMark = StepMark.None
+  ) {
+    super(title, message);
+
+    this.type = type;
+    this.input = input;
+    this.output = output;
+    this.mark = mark;
+  }
+
+  sendMessageToTenant(message: string): void {
+    const messageLog: OutputMessage = {
+      message: message,
+      time: format(new Date(), 'MM-dd HH:mm'),
+      to: 'Tenant',
+      isInput: false
+    };
+    this.logs.push(messageLog);
+  }
+
+  sendMessageToVendor(message: string): void {
+    const messageLog: OutputMessage = {
+      message: message,
+      time: format(new Date(), 'MM-dd HH:mm'),
+      to: 'Vendor',
+      isInput: false
+    };
+    this.logs.push(messageLog);
+  }
+
+  receiveMessageFromVendor(message: string): void {
+    const messageLog: InputMessage = {
+      message: message,
+      time: format(new Date(), 'MM-dd HH:mm'),
+      from: 'Vendor',
+      isInput: true
+    };
+    this.logs.push(messageLog);
+  }
+
+  receiveMessageFromTenant(message: string): void {
+    const messageLog: InputMessage = {
+      message: message,
+      time: format(new Date(), 'MM-dd HH:mm'),
+      from: 'Tenant',
+      isInput: true
+    };
+    this.logs.push(messageLog);
+  }
+}
+
+export type StepNodeResponse<TInput, TOutput> = Pick<StepNode<TInput, TOutput>, 'title' | 'message' | 'type' | 'logs' | 'output' | 'mark'>;
+
+export interface Builder<TInput, TOutput> {
+  WithTitle(title: string): this;
+  WithMessage(message: string): this;
+  WithInputData(data: TInput): this;
+  WithOutputData(data: TOutput): this;
+  OfType(type: StepNodeType, mark: StepMark): this;
+}
+
+export class StepBuilder<TInput, TOutput> implements Builder<TInput, TOutput> {
+
+  private type!: StepNodeType;
+  input!: TInput;
+  output!: TOutput;
+  title: string = '';
+  message: string = '';
+  mark: StepMark = StepMark.None;
+
+  constructor() {
+  }
+
+  OfType(type: StepNodeType, mark: StepMark = StepMark.None): this {
+    this.type = type;
+    this.mark = mark;
+    return this;
+  }
+
+  WithInputData(data: TInput): this {
+    this.input = data;
+    return this;
+  }
+
+  WithMessage(message: string): this {
+    this.message = message;
+    return this;
+  }
+
+  WithOutputData(data: TOutput): this {
+    this.output = data;
+    return this;
+  }
+
+  WithTitle(title: string): this {
+    this.title = title;
+    return this;
+  }
+
+  build(): StepNode<TInput, TOutput> {
+    return new StepNode<TInput, TOutput>(
+      this.title,
+      this.message,
+      this.type,
+      this.input,
+      this.output,
+      this.mark
+    );
+
+  }
+}
 
 export class StepList {
   private head?: StepNode<any, any> | null;
   private tail?: StepNode<any, any> | null;
 
-  addStep<TInput, TOutput>(initiator: RoleType,
-                stepData: DataNode<TInput> | null,
-                outputData: TOutput,
-                logs: LogsMessageType,
-                mark: StepMark = StepMark.None): void {
-
-    const newStep = new StepNode<TInput, TOutput>(initiator, stepData, outputData, logs, mark);
+  addStep(step: StepNode<any, any>): void {
 
     if (!this.head) {
-      this.head = newStep;
-      this.tail = newStep;
+      this.head = step;
+      this.tail = step;
     } else {
-      this.tail!.next = newStep;
-      this.tail = newStep;
+      this.tail!.next = step;
+      this.tail = step;
     }
   }
 
 
-  getLastStep<TInput, TOutput>(): StepNode<TInput, TOutput> {
-    return this.tail ?? new StepNode<TInput, TOutput>('Aimee', null, null, []);
+  getLastStep<TInput, TOutput>(): StepNodeResponse<TInput, TOutput>{
+    return this.tail ?? new StepNode<any, any>(
+      'Error in Step',
+      'An error occurred while processing the step',
+      StepNodeType.Error,
+      null,
+      null,
+      StepMark.None
+    );
   }
 
-  getSteps(): StepNode<any, any>[] {
-    const steps:StepNode<any, any>[] = [];
+  getWaitingStepByMark(mark: StepMark): StepNodeResponse<any, any> | null {
+    let step:StepNode<any, any> | null = null;
     let current = this.head;
     if(!current) {
-      return [];
+      return step;
     }
 
     while (current) {
-      steps.push(current);
+      if(current.type === StepNodeType.Waiting && current.mark === mark) {
+        step = current;
+        break;
+      }
       current = current.next;
     }
 
-    return steps;
+    return step;
   }
+
+  getLastMark(): StepMark {
+    return this.tail !== null ? this.tail?.mark! : StepMark.None;
+  }
+
 }
 
