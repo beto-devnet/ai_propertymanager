@@ -48,7 +48,7 @@
               </mat-paginator>
             </div>
 
-            @for (tenantMessage of tenantMessagesLog2(); track $index) {
+            @for (tenantMessage of tenantMessagesLog(); track $index) {
               <chat-bubble [time]="tenantMessage.time" [isIncoming]="tenantMessage.isInput">
                 {{ tenantMessage.message }}
               </chat-bubble>
@@ -99,7 +99,7 @@
           </div>
         </div>
         <div class="chat-messages" #eventContainer>
-          @for (eventMessage of eventMessagesLog2(); track $index) {
+          @for (eventMessage of eventMessagesLog(); track $index) {
             @if(eventMessage.renderType === StepNodeType.Issue) {
               <event-log-bubble [time]="eventMessage.deliveryTime">
                 <h2 class="font-black text-lg mb-2">Issue Request</h2>
@@ -204,10 +204,11 @@
         <div class="content">
           <div class="chat-messages">
 
-            @for (vendorMessage of vendorMessagesLog2(); track $index) {
+            @for (vendorMessage of vendorMessagesLog(); track $index) {
               <chat-bubble [time]="vendorMessage.time" [isIncoming]="vendorMessage.isInput">
                 <div class="whitespace-pre-line">
                   {{ vendorMessage.message }}
+                  {{ vendorMessage.isInput }}
                 </div>
               </chat-bubble>
             }

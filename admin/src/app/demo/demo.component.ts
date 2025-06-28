@@ -70,11 +70,10 @@ export default class DemoComponent implements OnInit {
   typingTenant = signal<boolean>(false);
   blockButtons = signal<boolean>(false);
 
-  tenantMessagesLog: WritableSignal<MessageLog[]> =signal<MessageLog[]>([]);
 
-  eventMessagesLog2: WritableSignal<Array<IssueMessage | EventMessageLog | WaitingMessageLog>> =signal<Array<IssueMessage | EventMessageLog | WaitingMessageLog>>([]);
-  vendorMessagesLog2: WritableSignal<Array<SimpleMessage>> =signal<Array<SimpleMessage>>([]);
-  tenantMessagesLog2: WritableSignal<Array<SimpleMessage>> =signal<Array<SimpleMessage>>([]);
+  eventMessagesLog: WritableSignal<Array<IssueMessage | EventMessageLog | WaitingMessageLog>> =signal<Array<IssueMessage | EventMessageLog | WaitingMessageLog>>([]);
+  vendorMessagesLog: WritableSignal<Array<SimpleMessage>> =signal<Array<SimpleMessage>>([]);
+  tenantMessagesLog: WritableSignal<Array<SimpleMessage>> =signal<Array<SimpleMessage>>([]);
 
   private coordinator: Coordinator;
 
@@ -200,15 +199,15 @@ export default class DemoComponent implements OnInit {
     if(step.type === StepNodeType.Issue) {
       const data: ProcessIssueResponse = step.output as ProcessIssueResponse;
       const message = RenderMessage.renderIssueMessage(data);
-      this.eventMessagesLog2.update(messages => [...messages, message]);
+      this.eventMessagesLog.update(messages => [...messages, message]);
     } else if(step.type === StepNodeType.Information) {
       const { title, message } = step;
       const messageToLog = RenderMessage.renderEventMessage(title, message);
-      this.eventMessagesLog2.update(messages => [...messages, messageToLog]);
+      this.eventMessagesLog.update(messages => [...messages, messageToLog]);
     } else if(step.type === StepNodeType.Waiting) {
       const { title } = step;
       const messageToLog = RenderMessage.renderWaitingMessage(title);
-      this.eventMessagesLog2.update(messages => [...messages, messageToLog]);
+      this.eventMessagesLog.update(messages => [...messages, messageToLog]);
     }
 
     if(step.logs.length) {
@@ -217,17 +216,17 @@ export default class DemoComponent implements OnInit {
           const { from, message, time } = log as InputMessage;
           const logMessage = RenderMessage.renderInputMessageLog(message, time);
           if(from === 'Vendor' ) {
-            this.vendorMessagesLog2.update(messages => [...messages, logMessage]);
+            this.vendorMessagesLog.update(messages => [...messages, logMessage]);
           } else if(from === 'Tenant' ) {
-            this.tenantMessagesLog2.update(messages => [...messages, logMessage]);
+            this.tenantMessagesLog.update(messages => [...messages, logMessage]);
           }
         } else if(!log.isInput) {
           const { to, message, time } = log as OutputMessage;
-          const logMessage = RenderMessage.renderInputMessageLog(message, time);
+          const logMessage = RenderMessage.renderOutputMessageLog(message, time);
           if(to === 'Vendor' ) {
-            this.vendorMessagesLog2.update(messages => [...messages, logMessage]);
+            this.vendorMessagesLog.update(messages => [...messages, logMessage]);
           } else if(to === 'Tenant' ) {
-            this.tenantMessagesLog2.update(messages => [...messages, logMessage]);
+            this.tenantMessagesLog.update(messages => [...messages, logMessage]);
           }
         }
       });
