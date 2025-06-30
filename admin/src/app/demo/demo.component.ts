@@ -20,12 +20,14 @@ import { EvetLogBubbleComponent } from '../shared/components/evet-log-bubble/eve
 import { Coordinator } from './Flow/Coordinator';
 import { StepNodeResponse, StepMark, StepNodeType } from './Flow/Step';
 import {
+  NodeLog,
   EventMessageLog,
   InputMessage,
-  IssueMessage,
+  IssueMessage, NodeMessageLog,
   OutputMessage,
   RenderMessage, SimpleMessage, WaitingMessageLog
 } from './Flow/LogCoordinator';
+import { NodeBubbleComponent } from '../shared/components/node-bubble/node-bubble.component';
 
 type LogType = 'event' | 'vendor' | 'tenant';
 @Component({
@@ -40,7 +42,8 @@ type LogType = 'event' | 'vendor' | 'tenant';
     ChatBubbleComponent,
     NgClass,
     TypingDotsComponent,
-    EvetLogBubbleComponent
+    EvetLogBubbleComponent,
+    NodeBubbleComponent
   ],
   templateUrl: './demo.component.html',
   styleUrl: './demo.component.css'
@@ -53,6 +56,7 @@ export default class DemoComponent implements OnInit {
   examples: Example[] = [];
   categories: Category[] = [];
   vendors: Vendor[] = [];
+  private tenantIssue: string = '';
   selectedVendor: Vendor = { id: 0, category: '', preferedVendor: false, companyName: '', descriptionOfServices: '', contacts: [] };
   selectedCategory: Category = { name: '', description: '' };
   issueControl: FormControl = new FormControl<string>('');
@@ -71,7 +75,7 @@ export default class DemoComponent implements OnInit {
   blockButtons = signal<boolean>(false);
 
 
-  eventMessagesLog: WritableSignal<Array<IssueMessage | EventMessageLog | WaitingMessageLog>> =signal<Array<IssueMessage | EventMessageLog | WaitingMessageLog>>([]);
+  eventMessagesLog: WritableSignal<Array<IssueMessage | EventMessageLog | WaitingMessageLog | NodeMessageLog >> =signal<Array<IssueMessage | EventMessageLog | WaitingMessageLog | NodeMessageLog >>([]);
   vendorMessagesLog: WritableSignal<Array<SimpleMessage>> =signal<Array<SimpleMessage>>([]);
   tenantMessagesLog: WritableSignal<Array<SimpleMessage>> =signal<Array<SimpleMessage>>([]);
 
@@ -108,6 +112,7 @@ export default class DemoComponent implements OnInit {
     // issue request flow
     this.blockButtons.set(true);
     const issue = this.issueControl.value;
+    this.tenantIssue = this.issueControl.value;
     this.typingLog();
     const issueReq: ProcessIssueRequest = { UserId: this.tenant.id, IssueDescription: issue };
     const createIssueStep = await this.coordinator.createIssue(issueReq);
@@ -117,26 +122,11 @@ export default class DemoComponent implements OnInit {
     // select a vendor based on the category
     this.selectedCategory = this.categories
         .find(category => category.name.trim().toLowerCase() === createIssueStep.output.category.trim().toLowerCase())
-        || this.categories[0];
+      || this.categories[0];
 
-    await this.sleepBetweenSteps();
+    await this.findVendor(this.selectedCategory.name);
 
-    const selectedVendorStep = await this.coordinator.selectVendorBasedOnCategory(this.selectedCategory.name);
-    this.displayMessages(selectedVendorStep);
-
-    this.selectedVendor = selectedVendorStep.output;
-
-    await this.sleepBetweenSteps();
-
-    // ask vendor for availability
-    const availabilityStep =await this.coordinator.AskForAvailability(this.selectedCategory.name, this.selectedVendor.id, issue);
-    this.displayMessages(availabilityStep);
-
-    await this.sleepBetweenSteps();
-
-    // waiting for vendor to reply
-    const waiting = this.coordinator.waitForVendorAvailabilityReply();
-    this.displayMessages(waiting);
+    await this.askVendorForAvailability(this.tenantIssue);
   }
 
   async tenantToAimee(): Promise<void> {
@@ -151,6 +141,9 @@ export default class DemoComponent implements OnInit {
     if(mark === StepMark.WaitingTenantConfirmIssueFixed) {
       const confirmationStep = await this.coordinator.confirmWithTenantIssueFixed(message);
       this.displayMessages(confirmationStep);
+
+      const finalStep = this.coordinator.closeIssue();
+      this.displayMessages(finalStep);
     }
 
   }
@@ -169,7 +162,13 @@ export default class DemoComponent implements OnInit {
       const availabilityStep = await this.coordinator.vendorReplyAvailability(this.selectedVendor.id, message);
       this.displayMessages(availabilityStep);
 
-      if(!availabilityStep.output.isAvailable) {} //FIND OTHER VENDOR
+      if(!availabilityStep.output.isAvailable) {
+        this.vendorMessagesLog.set([]);
+        await this.findVendor(this.selectedCategory.name);
+
+        await this.askVendorForAvailability(this.tenantIssue);
+        return;
+      }
 
       const informStep = await this.coordinator.InformTenantAboutContactWithVendor(this.selectedVendor.id);
       this.displayMessages(informStep);
@@ -195,6 +194,28 @@ export default class DemoComponent implements OnInit {
     }
   }
 
+  private async findVendor(categorySelected: string): Promise<void> {
+
+    // await this.sleepBetweenSteps();
+
+    const selectedVendorStep = await this.coordinator.selectVendorBasedOnCategory(this.selectedCategory.name);
+    this.displayMessages(selectedVendorStep);
+
+    this.selectedVendor = selectedVendorStep.output;
+  }
+
+  private async askVendorForAvailability(issue: string): Promise<void> {
+    // ask vendor for availability
+    const availabilityStep = await this.coordinator.AskForAvailability(this.selectedCategory.name, this.selectedVendor.id, issue);
+    this.displayMessages(availabilityStep);
+
+    // await this.sleepBetweenSteps();
+
+    // waiting for vendor to reply
+    const waiting = this.coordinator.waitForVendorAvailabilityReply();
+    this.displayMessages(waiting);
+  }
+
   private displayMessages(step: StepNodeResponse<any, any>) {
     if(step.type === StepNodeType.Issue) {
       const data: ProcessIssueResponse = step.output as ProcessIssueResponse;
@@ -205,8 +226,12 @@ export default class DemoComponent implements OnInit {
       const messageToLog = RenderMessage.renderEventMessage(title, message);
       this.eventMessagesLog.update(messages => [...messages, messageToLog]);
     } else if(step.type === StepNodeType.Waiting) {
-      const { title } = step;
-      const messageToLog = RenderMessage.renderWaitingMessage(title);
+      const { title, message } = step;
+      const messageToLog = RenderMessage.renderWaitingMessage(title, message);
+      this.eventMessagesLog.update(messages => [...messages, messageToLog]);
+    } else if(step.type === StepNodeType.Node) {
+      const { title, message, steps } = step;
+      const messageToLog = RenderMessage.renderNodeMessage(title, message, steps);
       this.eventMessagesLog.update(messages => [...messages, messageToLog]);
     }
 

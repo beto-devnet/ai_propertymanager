@@ -1,4 +1,5 @@
 import {
+  NodeLog,
   InputMessage,
   LogsMessageType,
   OutputMessage
@@ -19,18 +20,20 @@ export enum StepNodeType {
   Issue,
   Information,
   Waiting,
-  Message,
+  Node,
   Error,
 }
 
 export interface INode {
   title: string;
   message: string;
+  steps: NodeLog[];
 }
 
 export class Node implements INode {
   title: string;
   message: string;
+  steps: NodeLog[] = [];
 
   constructor(title: string, message: string) {
     this.title = title;
@@ -62,6 +65,17 @@ export class StepNode<TInput, TOutput> extends Node {
     this.output = output;
     this.mark = mark;
   }
+
+  addLogStep(from: RoleType, message: string): void {
+    const messageLog: NodeLog = {
+      title:`Message from ${from}`,
+      from: from,
+      message: message,
+      time: format(new Date(), 'MM-dd HH:mm'),
+    };
+    this.steps.push(messageLog);
+  }
+
 
   sendMessageToTenant(message: string): void {
     const messageLog: OutputMessage = {
@@ -104,7 +118,7 @@ export class StepNode<TInput, TOutput> extends Node {
   }
 }
 
-export type StepNodeResponse<TInput, TOutput> = Pick<StepNode<TInput, TOutput>, 'title' | 'message' | 'type' | 'logs' | 'output' | 'mark'>;
+export type StepNodeResponse<TInput, TOutput> = Pick<StepNode<TInput, TOutput>, 'title' | 'message' | 'type' | 'logs' |'output' | 'steps' | 'input' | 'mark'>;
 
 export interface Builder<TInput, TOutput> {
   WithTitle(title: string): this;

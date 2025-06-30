@@ -1,10 +1,4 @@
-﻿import {
-  StepList,
-  StepNodeResponse,
-  StepBuilder,
-  StepMark,
-  StepNodeType
-} from './Step';
+﻿import { StepBuilder, StepList, StepMark, StepNodeResponse, StepNodeType } from './Step';
 import { ProcessIssueRequest, ProcessIssueResponse } from '../Engine/models/ProcessIssue';
 import { Tenant } from '../models/Tenant';
 import { inject } from '@angular/core';
@@ -110,6 +104,7 @@ export class Coordinator {
     const builder = new StepBuilder<null, null>();
     const step = builder
       .WithTitle('Waiting for Vendor Reply')
+      .WithMessage('Waiting for vendor to reply with availability')
       .OfType(StepNodeType.Waiting, StepMark.WaitingVendorAvailabilityReply)
       .build();
 
@@ -140,10 +135,12 @@ export class Coordinator {
       .WithMessage(data.message)
       .WithInputData(vendorReplyMessage)
       .WithOutputData(data)
-      .OfType(StepNodeType.Information)
+      .OfType(StepNodeType.Node)
       .build();
 
     step.receiveMessageFromVendor(vendorReplyMessage);
+    step.addLogStep('Vendor', vendorReplyMessage);
+
     this.regularStep.addStep(step);
     return this.regularStep.getLastStep();
   }
@@ -168,15 +165,6 @@ export class Coordinator {
     step.sendMessageToTenant(data.message);
     this.regularStep.addStep(step);
     return this.regularStep.getLastStep();
-
-    // const data: DataNode<InformTenantContactFromVendor> = { title: 'Inform Tenant', message: 'Inform Tenant that vendor will be reaching out', data: request };
-    //
-    //
-    // this.log.LogAimeeMessage(data.title, result.data?.message!);
-    // this.log.LogOutputMessage('Tenant', result.data?.message!);
-    //
-    // this.steps.addStep<InformTenantContactFromVendor, InformTenantContactFromVendorResponse>('Aimee', data, result.data!, this.log.getLogs());
-    // return this.steps.getLastStep<InformTenantContactFromVendor, InformTenantContactFromVendorResponse>();
   }
 
   async vendorConfirmScheduledVisit(vendorId: number, vendorName: string, vendorCompany: string, vendorMessage: string): Promise<StepNodeResponse<string, VendorScheduledVisitTimeResponse>> {
@@ -192,10 +180,11 @@ export class Coordinator {
       .WithMessage('Vendor confirm a date and time visit with tenant')
       .WithInputData(vendorMessage)
       .WithOutputData(data)
-      .OfType(StepNodeType.Information)
+      .OfType(StepNodeType.Node)
       .build();
 
     step.receiveMessageFromVendor(vendorMessage);
+    step.addLogStep('Vendor', vendorMessage);
 
     const date = Date.parse(`${result.data?.scheduleDate!} ${result.data?.scheduleTime!}`);
     const dateFormatted = format(new Date(date), "eeee, dd 'at' HH:mm" );
@@ -229,14 +218,15 @@ export class Coordinator {
 
     const step = builder
       .WithTitle(request.step)
-      .WithMessage(vendorMessage)
+      .WithMessage(data.message)
       .WithInputData(vendorMessage)
       .WithOutputData(data)
-      .OfType(StepNodeType.Information)
+      .OfType(StepNodeType.Node)
       .build();
 
     step.receiveMessageFromVendor(vendorMessage);
     step.sendMessageToVendor(data.message);
+    step.addLogStep('Vendor', vendorMessage);
 
     this.regularStep.addStep(step);
     return this.regularStep.getLastStep();
@@ -264,14 +254,28 @@ export class Coordinator {
     const builder = new StepBuilder<string, TenantConfirmedIssueWasFixedResponse>();
     const step = builder
       .WithTitle('Tenant Confirm Issue Fixed')
-      .WithMessage(tenantMessage)
+      .WithMessage(data.message)
       .WithInputData(tenantMessage)
       .WithOutputData(data)
-      .OfType(StepNodeType.Information)
+      .OfType(StepNodeType.Node)
       .build();
 
     step.receiveMessageFromTenant(tenantMessage);
     step.sendMessageToTenant(data.message);
+    step.addLogStep('Tenant', tenantMessage);
+
+    this.regularStep.addStep(step);
+    return this.regularStep.getLastStep();
+  }
+
+  closeIssue(): StepNodeResponse<string, string> {
+    const builder = new StepBuilder<string, string>();
+    const step = builder
+      .WithTitle('Ticket Completed')
+      .WithInputData('')
+      .WithOutputData('')
+      .OfType(StepNodeType.Information)
+      .build();
 
     this.regularStep.addStep(step);
     return this.regularStep.getLastStep();

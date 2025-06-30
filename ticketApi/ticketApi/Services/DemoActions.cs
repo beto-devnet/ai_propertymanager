@@ -123,7 +123,7 @@ public class DemoActions
                         
                         It is a positively response from vendor to take the job and contact to the client or is it needed to ask to other vendor for their availability";
      
-        var response = await _geminiService.FakeAvailabilityResponse(prompt);
+        var response = await _geminiService.FakeAvailabilityResponse(prompt, false);
         // var response = await _geminiService.ProcessPrompt<Gemini.AvailabilityResponse>(prompt);
         if (response.IsError)
             return new Demo.Models.VendorMessageAvailabilityResponse(false, "Not available", DateTime.Now.ToString("MM-dd HH:mm"));
@@ -170,7 +170,7 @@ public class DemoActions
     {
         var prompt = $"According to the message from a tenant: {request.MessageToAime}. I need to validate id the issue was successfully fixed. If the issue was fixed, then, response kindly and warm to the tenant about to inform the issue is fixed.";
         
-        var response = await _geminiService.IssueFixedFake(prompt);
+        var response = await _geminiService.TenantConfirmedIssueFixedFake(prompt);
         // var response = await _geminiService.ProcessPrompt<Gemini.TenantFixedIssue>(prompt);
         if (response.IsError)
             return new Demo.Models.TenantConfirmedFixedIssue(false, "", DateTime.Now.ToString("MM-dd HH:mm"));

@@ -128,51 +128,45 @@
                   <p>{{ eventMessage.message }}</p>
                 </div>
               </event-log-bubble>
-            } @else if (eventMessage.renderType === StepNodeType.Information) {
+            }
+            @else if (eventMessage.renderType === StepNodeType.Information) {
               <event-log-bubble [time]="eventMessage.deliveryTime">
                 <div>
-                  <h3>{{ eventMessage.title }}</h3>
-                  <p>{{ eventMessage.message }}</p>
-                </div>
-              </event-log-bubble>
-            } @else if (eventMessage.renderType === StepNodeType.Waiting) {
-              <event-log-bubble [time]="eventMessage.deliveryTime">
-                <div>
+                  <div class="flex flex-row justify-between items-center mb-2">
+                    <h3 class="font-semibold">{{ eventMessage.title }}</h3>
+                    @if(eventMessage.title == 'Ticket Completed') {
+                      <mat-icon class="text-green-500">done_all</mat-icon>
+                    } @else {
+                      <mat-icon fontSet="material-symbols-outlined" class="text-blue-500">neurology</mat-icon>
+                    }
+                  </div>
                   <p>{{ eventMessage.message }}</p>
                 </div>
               </event-log-bubble>
             }
-<!--            @if (eventMessage.step.step !== Step.LogIssue) {-->
-<!--              <event-log-bubble [time]="eventMessage.deliveryTime" [isWaiting]="eventMessage.nextStep === Step.Waiting">-->
-<!--                @if(eventMessage.nextStep === Step.Waiting) {-->
-<!--                  <div class="font-bold pb-2">{{ eventMessage.task }}</div>-->
-<!--                  <p>{{ eventMessage.response }}</p>-->
-<!--                } @else {-->
-<!--                  <div class="message-container">-->
-<!--                    <label>Task:</label>-->
-<!--                    <p>{{ eventMessage.task }}</p>-->
-<!--                  </div>-->
-<!--                  <div class="message-response-container">-->
-<!--                    @if(eventMessage.step.receiver === 'Tenant'){-->
-<!--                      <label>Message To Tenant:</label>-->
-<!--                    } @else if(eventMessage.step.receiver === 'Vendor') {-->
-<!--                      <label>Message To Vendor:</label>-->
-<!--                    } @else {-->
-<!--                      <label>Response:</label>-->
-<!--                    }-->
-<!--                    <p>-->
-<!--                      {{ eventMessage.response }}-->
-<!--                    </p>-->
-<!--                  </div>-->
-<!--                  @if(eventMessage.step.nextStep != null) {-->
-<!--                    <div class="message-response-container">-->
-<!--                      <label>Next step:</label>-->
-<!--                      <p>{{ eventMessage.step.nextStep }}</p>-->
-<!--                    </div>-->
-<!--                  }-->
-<!--                }-->
-<!--              </event-log-bubble>-->
-<!--            }-->
+            @else if (eventMessage.renderType === StepNodeType.Waiting) {
+              <event-log-bubble [time]="eventMessage.deliveryTime">
+                <div>
+                  <div class="flex flex-row justify-between items-center mb-2">
+                    <p class="font-semibold">{{ eventMessage.title }}</p>
+                    <mat-icon class="text-purple-600">schedule</mat-icon>
+                  </div>
+                  @if(eventMessage.message) {
+                    <div>
+                      {{ eventMessage.message }}
+                    </div>
+                  }
+                </div>
+              </event-log-bubble>
+            }
+            @else if (eventMessage.renderType === StepNodeType.Node) {
+              <event-node-bubble
+                [title]="eventMessage.title"
+                [message]="eventMessage.message"
+                [time]="eventMessage.deliveryTime"
+                [steps]="eventMessage.steps">
+              </event-node-bubble>
+            }
           }
           @if (typingLog()) {
             <typing-dots></typing-dots>
@@ -208,7 +202,6 @@
               <chat-bubble [time]="vendorMessage.time" [isIncoming]="vendorMessage.isInput">
                 <div class="whitespace-pre-line">
                   {{ vendorMessage.message }}
-                  {{ vendorMessage.isInput }}
                 </div>
               </chat-bubble>
             }

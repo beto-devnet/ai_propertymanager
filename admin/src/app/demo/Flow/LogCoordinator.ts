@@ -16,6 +16,21 @@ export interface OutputMessage extends SimpleMessage {
   to: RoleType;
 }
 
+// export interface AnalyzeMessage extends SimpleMessage {
+//   title: string;
+//   from: RoleType;
+//   isInput: true;
+// }
+
+export interface NodeLog {
+  title: string;
+  from: RoleType;
+  message: string;
+  time: string;
+  // isNodeLog: boolean;
+  // isInput: boolean;
+}
+
 
 export type LogsMessageType = Array<InputMessage | OutputMessage>;
 
@@ -44,7 +59,14 @@ export interface EventMessageLog extends RenderMessageBase {
 }
 
 export interface WaitingMessageLog extends RenderMessageBase {
+  title: string;
   renderType: StepNodeType.Waiting;
+}
+
+export interface NodeMessageLog extends RenderMessageBase {
+  title: string;
+  steps: NodeLog[];
+  renderType: StepNodeType.Node;
 }
 
 export class RenderMessage {
@@ -70,11 +92,31 @@ export class RenderMessage {
       }
   }
 
-  static renderWaitingMessage(message: string): WaitingMessageLog {
+  static renderWaitingMessage(title: string, message: string): WaitingMessageLog {
     return {
       message: message,
+      title: title,
       deliveryTime: format(new Date(), 'MM-dd HH:mm'),
       renderType: StepNodeType.Waiting
+    }
+  }
+
+  static renderNodeMessage(title: string, message: string, messages: NodeLog[]): NodeMessageLog {
+    return {
+      title: title,
+      message: message,
+      steps: messages,
+      deliveryTime: format(new Date(), 'MM-dd HH:mm'),
+      renderType: StepNodeType.Node
+    }
+  }
+
+  static renderAnalyzeMessage(title: string, message: string): NodeLog {
+    return {
+      title: title,
+      message: message,
+      time: format(new Date(), 'MM-dd HH:mm'),
+      from: 'Aimee',
     }
   }
 
