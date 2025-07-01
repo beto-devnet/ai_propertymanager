@@ -78,12 +78,6 @@ export default class DemoComponent implements OnInit {
   issueControl: FormControl = new FormControl<string>('');
   tenantMessageControl: FormControl = new FormControl<string>('');
   vendorMessageControl: FormControl = new FormControl<string>('');
-  // tenant: Tenant =  {
-  //   id: 1,
-  //   name: 'Diane Harris',
-  //   phone: '123-456-789',
-  //   address: 'some street 123'
-  // };
   properties: Property2[] = [];
   propertySelected: Property2 = { id: 0, address: '', tenant: { name: '', telephone: '' }, landlord: '', leaseAgreementClauses: [] };
   private sleepTimeForMessages = 1500;

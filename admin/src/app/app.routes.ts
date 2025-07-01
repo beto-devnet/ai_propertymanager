@@ -3,7 +3,7 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: '/ai-chat',
+    redirectTo: 'ai-chat/1',
     pathMatch: 'full'
   },
   {
