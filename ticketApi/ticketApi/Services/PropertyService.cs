@@ -68,4 +68,10 @@ public class PropertyService
     
     public List<Models.Models.PropertyBrief> GetPropertiesBrief() => _properties2.Select(x => new Models.Models.PropertyBrief(x.Id, x.Tenant.Name)).ToList();
     public List<Models.Models.Property2> GetProperties2() => _properties2;
+
+    public List<Models.Models.LeaseAgreementClause> GetLeaseAgreementClauses(int propertyId) =>
+        _properties2
+            .Where(x => x.Id == propertyId)
+            .SelectMany(x => x.LeaseAgreementClauses)
+            .ToList();
 }

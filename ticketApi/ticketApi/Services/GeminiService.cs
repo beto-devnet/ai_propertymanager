@@ -32,7 +32,8 @@ public class GeminiService
         {
             Category = "HVAC",
             Response =
-                "I'm sorry to hear that your AC is not cooling. I will make sure the right team is assigned to assist you ASAP!"
+                "I'm sorry to hear that your AC is not cooling. I will make sure the right team is assigned to assist you ASAP!",
+            ResolutionResponsibility = "Tenant"
         });
     }
     public async Task<ErrorOr<Gemini.AvailabilityResponse>> FakeAvailabilityResponse(string prompt, bool isAvailable = true)

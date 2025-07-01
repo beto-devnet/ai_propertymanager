@@ -34,15 +34,6 @@ public class DemoActions
         };
     }
     
-    // public Models.Models.Tenant GetRandomTenant()
-    // {
-    //     var tenants = _tenantService.GetTenants();
-    //     var random = new Random();
-    //     var randomIndex = random.Next(tenants.Count);
-    //     
-    //     return tenants[randomIndex];
-    // }
-
     public List<Models.Models.PropertyBrief> GetAllPropertiesBrief => _propertyService.GetPropertiesBrief();
     public List<Models.Models.Property2> GetAllProperties => _propertyService.GetProperties2();
     public ErrorOr<Models.Models.Property2> Login(int propertyId)
@@ -56,6 +47,18 @@ public class DemoActions
         var property =  _propertyService.GetProperties2().First(x => x.Id == request.UserId);
         var tenant = property.Tenant;
         
+        var clauses = _propertyService.GetLeaseAgreementClauses(property.Id);
+        var clausesString = String.Empty;
+        if (clauses.Any())
+        {
+            foreach (var clause in clauses)
+            {
+                clausesString += @$"
+
+                    - Category: {clause.Category}, clause: {clause.Clause}.";
+            }
+        }
+        
         var categories = "";
         foreach (var category in _categoryService.Categories)
             categories += $"- {category.Name} \n";
@@ -64,17 +67,29 @@ public class DemoActions
         {request.IssueDescription}. 
         
         Please, assign the correct category from the following list: 
-        {categories}
-        
-        Also, return a warm response to customer";
+        {categories}";
+
+        if (clausesString != string.Empty)
+        {
+            prompt += @$"
+
+                    Also, Identify the resolution responsibility from the following leasing clauses:
+                    {clausesString}
+
+                    Response with 'Tenant', 'Landlord', or 'Unknown'.
+
+                    ";
+        }
+    
+        prompt += "Finally, return a warm response to customer. It is important to greet the tenant warmly and include any commentary or explanation that helps them understand you are here to assist and ensure a timely resolution of their request.";
 
         var response = _options.UseFakeResponses ? await _geminiService.GenerateTextAsyncFake(prompt) : await _geminiService.ProcessPrompt<Gemini.IssueResponse>(prompt);
         if (response.IsError)
             return response.FirstError;
 
-        var responseFull = new IssueResponseFull(response.Value.Category, request.IssueDescription, tenant.Name, tenant.Telephone, property.Address, "Next Step");
-        responseFull.SetDate();
-        responseFull.SetResponse(response.Value.Response);
+        var responseFull = new IssueResponseFull(response.Value.Category, request.IssueDescription, tenant.Name, tenant.Telephone, property.Address, response.Value.Response, response.Value.ResolutionResponsibility, "Next Step");
+        // responseFull.SetDate();
+        // responseFull.SetResponse(response.Value.Response);
         
         return responseFull;
     }

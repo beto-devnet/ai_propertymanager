@@ -9,8 +9,8 @@ export interface ProcessIssueResponse {
   tenantName: string;
   phone: string;
   address: string;
-  nextStep: string;
+  step: string;
   response: string;
-  time: string;
+  resolutionResponsibility: string;
 }
 

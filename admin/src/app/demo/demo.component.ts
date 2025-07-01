@@ -105,7 +105,7 @@ export default class DemoComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    this.selectedUserId = Number.parseInt(this.activatedRoute.snapshot.params['id'] || '0');
+    this.selectedUserId = Number.parseInt(this.activatedRoute.snapshot.params['id'] || '1');
 
     this.service.getCategories().pipe(takeUntilDestroyed(this.destroyedRef$)).subscribe((categories: Category[]) => this.categories = categories);
     this.service.getVendors().pipe(takeUntilDestroyed(this.destroyedRef$)).subscribe((vendors: Vendor[]) => this.vendors = vendors);
@@ -118,11 +118,6 @@ export default class DemoComponent implements OnInit {
       this.propertySelected = result.find(x => x.id === this.selectedUserId) || result[0];
       this.coordinator.Property = this.propertySelected;
     })).subscribe();
-    // this.service.getRandomTenant().pipe(takeUntilDestroyed(this.destroyedRef$)).subscribe((tenant: Tenant) => {
-    //   this.tenant = tenant;
-    //   this.coordinator.Tenant = tenant;
-    // });
-
   }
 
   handlePageEvent(event$: PageEvent): void {
@@ -145,6 +140,11 @@ export default class DemoComponent implements OnInit {
     await this.sleepBetweenSteps(this.sleepTimeForMessages);
     await this.displayMessages(createIssueStep);
     this.blockButtons.set(false);
+
+    if(createIssueStep.output.resolutionResponsibility.toLowerCase() == 'tenant') {
+      console.log('resolution responsibility tenant');
+      return;
+    }
 
     // select a vendor based on the category
     this.selectedCategory = this.categories

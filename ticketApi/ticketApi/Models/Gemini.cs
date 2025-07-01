@@ -32,6 +32,9 @@ public class Gemini
     
         [JsonPropertyName("category")]
         public string Category { get; set; }
+        
+        [JsonPropertyName("resolutionResponsibility")]
+        public string ResolutionResponsibility { get; set; }
     }
     
     public class AvailabilityResponse

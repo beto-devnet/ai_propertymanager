@@ -78,7 +78,7 @@ export class RenderMessage {
       issueDescription: issue.issue,
       category: issue.category,
       message: issue.response,
-      deliveryTime: format(new Date(issue.time), 'MM-dd HH:mm'),
+      deliveryTime: format(new Date(), 'MM-dd HH:mm'),
       renderType: StepNodeType.Issue
     }
   }
