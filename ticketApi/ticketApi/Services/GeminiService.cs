@@ -49,7 +49,8 @@ public class GeminiService
         return await Task.FromResult(new Gemini.DateAndTime()
         {
             ScheduleDate = DateTime.Now.AddDays(4).ToString("yyy-MM-dd"),
-            ScheduleTime = DateTime.Now.AddHours(4).ToString("HH:mm")
+            ScheduleTime = DateTime.Now.AddHours(4).ToString("HH:mm"),
+            IsScheduled = true
         });
     }
     

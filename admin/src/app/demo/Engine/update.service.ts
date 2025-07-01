@@ -25,11 +25,6 @@ export class UpdateService {
   constructor() {
   }
 
-  getRandomTenant(): Observable<Tenant> {
-    const url = `${this.path}/message/randon-tenant`;
-    return this.httpClient.get<Tenant>(url);
-  }
-
   getIssues(): Observable<Example[]> {
     const url = `${this.path}/message/examples`;
     return this.httpClient.get<Example[]>(url);

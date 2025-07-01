@@ -17,10 +17,12 @@ import { VendorConfirmedIssueWasFixedResponse } from '../Engine/models/VendorCon
 import { TenantConfirmedIssueWasFixedResponse } from '../Engine/models/TenantConfirmedIssueWasFixedResponse';
 import { VendorAvailabilityResponse } from '../models/vendorAvailabilityResponse';
 import { format } from 'date-fns';
+import { Property2 } from '../../login/models';
 
 export class Coordinator {
   private regularStep: StepList;
-  private tenant!: Tenant;
+  // private tenant!: Tenant;
+  private property!: Property2;
   private service: UpdateService = inject(UpdateService);
 
   constructor() {
@@ -28,7 +30,11 @@ export class Coordinator {
   }
 
   set Tenant(tenant: Tenant) {
-    this.tenant = tenant;
+    // this.tenant = tenant;
+  }
+
+  set Property(property: Property2) {
+    this.property = property;
   }
 
   get LastMark(): StepMark {
@@ -74,12 +80,12 @@ export class Coordinator {
 
   async AskForAvailability(categoryName: string, vendorId: number, issue: string): Promise<StepNodeResponse<AskForAvailability, AskForAvailabilityResponse>> {
     const request: AskForAvailability = {
-      UserId: this.tenant.id,
+      UserId: this.property.id,
       Category:  categoryName,
       VendorId: vendorId,
       Issue: issue,
     };
-    const messageReq: SendMessageRequest<AskForAvailability> = { toVendorId: this.tenant.id, request: request, step: 'ask for availability' };
+    const messageReq: SendMessageRequest<AskForAvailability> = { toVendorId: this.property.id, request: request, step: 'ask for availability' };
 
     const result = await firstValueFrom(this.service.sendMessage(messageReq))
     const data = result.data!;
@@ -147,8 +153,8 @@ export class Coordinator {
 
   async InformTenantAboutContactWithVendor(vendorId: number): Promise<StepNodeResponse<InformTenantContactFromVendor, InformTenantContactFromVendorResponse>> {
 
-    const request: InformTenantContactFromVendor = { vendorId: vendorId, tenantId: this.tenant.id };
-    const messageRequest: SendMessageRequest<InformTenantContactFromVendor> = { toTenantId: this.tenant.id, step: 'Response to Tenant', request };
+    const request: InformTenantContactFromVendor = { vendorId: vendorId, tenantId: this.property.id };
+    const messageRequest: SendMessageRequest<InformTenantContactFromVendor> = { toTenantId: this.property.id, step: 'Response to Tenant', request };
     const result = await firstValueFrom(this.service.sendMessageGeneric<InformTenantContactFromVendor, InformTenantContactFromVendorResponse>(messageRequest));
 
     if(result.isError) {}
@@ -188,7 +194,7 @@ export class Coordinator {
 
     const date = Date.parse(`${result.data?.scheduleDate!} ${result.data?.scheduleTime!}`);
     const dateFormatted = format(new Date(date), "eeee, dd 'at' HH:mm" );
-    const messageToTenant = `Hi ${this.tenant.name}. Quick update.
+    const messageToTenant = `Hi ${this.property.tenant.name}. Quick update.
     ${vendorName} from ${vendorCompany} has confirmed a date and time to visit your home by ${dateFormatted}.`
 
     step.sendMessageToTenant(messageToTenant);
@@ -213,9 +219,8 @@ export class Coordinator {
     const result = await firstValueFrom(this.service.receiveMessageGeneric<VendorConfirmedIssueWasFixedResponse>(request));
     if(result.isError) {}
 
-    const builder = new StepBuilder<string, VendorConfirmedIssueWasFixedResponse>();
     const data = result.data!;
-
+    const builder = new StepBuilder<string, VendorConfirmedIssueWasFixedResponse>();
     const step = builder
       .WithTitle(request.step)
       .WithMessage(data.message)
@@ -239,14 +244,14 @@ export class Coordinator {
       .OfType(StepNodeType.Waiting, StepMark.WaitingTenantConfirmIssueFixed)
       .build();
 
-    const msg = `Hi, ${this.tenant.name}. Looks like ${vendorName} from ${vendorCompany} has fixed the issue. Can you confirm that we can close the ticket?`;
+    const msg = `Hi, ${this.property.tenant.name}. Looks like ${vendorName} from ${vendorCompany} has fixed the issue. Can you confirm that we can close the ticket?`;
     step.sendMessageToTenant(msg);
     this.regularStep.addStep(step);
     return this.regularStep.getLastStep();
   }
 
   async confirmWithTenantIssueFixed(tenantMessage: string): Promise<StepNodeResponse<string, TenantConfirmedIssueWasFixedResponse>> {
-    const request: ReceiveMessageRequest = { fromTenantId: this.tenant.id, step: 'Tenant confirmed Issue was fixed', aimeeMessage: '', messageToAime: tenantMessage };
+    const request: ReceiveMessageRequest = { fromTenantId: this.property.id, step: 'Tenant confirmed Issue was fixed', aimeeMessage: '', messageToAime: tenantMessage };
     const result = await firstValueFrom(this.service.receiveMessageGeneric<TenantConfirmedIssueWasFixedResponse>(request));
     if(result.isError) {}
 

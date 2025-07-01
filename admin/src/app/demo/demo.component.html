@@ -19,7 +19,7 @@
           <div>
             <img width="120px" fetchpriority="high" alt="" src="https://www.buildium.com/wp-content/uploads/2023/08/buildium-logo-1.svg">
           </div>
-          <div>{{ tenant.name }}</div>
+          <div>{{ propertySelected.tenant.name }}</div>
           <div>
             <img ngSrc="./assets/img/person.jpeg" alt="" height="30" width="40" class="rounded-full">
           </div>
@@ -98,7 +98,7 @@
             <img ngSrc="./assets/img/AmieeJones.png" width="40" alt="" height="49">
           </div>
         </div>
-        <div class="chat-messages" #eventContainer>
+        <div class="chat-messages">
           @for (eventMessage of eventMessagesLog(); track $index) {
             @if(eventMessage.renderType === StepNodeType.Issue) {
               <event-log-bubble [time]="eventMessage.deliveryTime">

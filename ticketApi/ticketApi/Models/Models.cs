@@ -12,8 +12,16 @@ public class Models
     {
         public string Answer { get; set; } = string.Empty;
     }
+    
+    public record LoginRequest(int Id, string Password);
 
     public record Tenant(int Id, string Name, string Phone, string Address);
+    
+    public record Tenant2(string Name, string Telephone);
+    public record LeaseAgreementClause(string Category, string Clause);
+    public record Property2(int Id, string Address, Tenant2 Tenant, string Landlord, List<LeaseAgreementClause> LeaseAgreementClauses);
+    public record PropertyBrief(int Id, string Name);
+    
     public record Contact(string Name, string Email, string Phone, string PreferredMethodOfContact);
     public record Vendor(int Id, string Category, bool PreferedVendor, string CompanyName, string DescriptionOfServices, List<Contact> Contacts);
     public record Property(string Address, string Tenant, string Landlord, string ImportantContractObligations);

@@ -1,7 +1,5 @@
-using System.Text.Json;
-using ErrorOr;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
-using NuGet.Protocol;
 using ticketApi.Models;
 using ticketApi.Services;
 
@@ -11,26 +9,45 @@ namespace ticketApi.Controllers
     [ApiController]
     public class MessageController : ControllerBase
     {
-        private readonly DemoServices _demoServices;
         private readonly DemoActions _demoActions;
 
-        public MessageController(DemoServices demoServices, DemoActions demoActions)
+        public MessageController(DemoActions demoActions)
         {
-            _demoServices = demoServices;
             _demoActions = demoActions;
         }
 
-        [HttpGet("randon-tenant")]
-        public async Task<IActionResult> GetRandomTenant()
+        // [HttpGet("randon-tenant")]
+        // public async Task<IActionResult> GetRandomTenant()
+        // {
+        //     var tenant = _demoActions.GetRandomTenant();
+        //     return await Task.FromResult(Ok(tenant));
+        // }
+        
+        [HttpGet("all-properties-brief")]
+        public async Task<IActionResult> GetAllPropertiesBrief()
         {
-            var tenant = _demoActions.GetRandomTenant();
-            return await Task.FromResult(Ok(tenant));
+            var properties = _demoActions.GetAllPropertiesBrief;
+            return await Task.FromResult(Ok(properties));
+        }
+        
+        [HttpGet("all-properties")]
+        public async Task<IActionResult> GetAllProperties()
+        {
+            var properties = _demoActions.GetAllProperties;
+            return await Task.FromResult(Ok(properties));
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(Models.Models.LoginRequest request)
+        {
+            var result = await Task.FromResult(_demoActions.Login(request.Id));
+            return result.Match(Ok, e => StatusCode(500, e[0].Description));
         }
         
         [HttpGet("examples")]
         public IActionResult GetExamples()
         {
-            return Ok(_demoServices.GetExamples());
+            return Ok(_demoActions.GetExamples());
         }
 
         [HttpGet("get-vendor/{category}")]
@@ -43,7 +60,7 @@ namespace ticketApi.Controllers
         [HttpPost("process-issue")]
         public async Task<IActionResult> ProcessIssue(Models.Models.AssistantRequest request)
         {
-            var result = await _demoServices.ProcessIssue(request);
+            var result = await _demoActions.ProcessIssue(request);
             return result.Match(Ok, failure => StatusCode(500, failure[0].Description));
         }
 
@@ -63,60 +80,60 @@ namespace ticketApi.Controllers
         
         
         #region OLD METHOD
-        [HttpPost("service-availability-message")]
-        public async Task<IActionResult> GetServiceAvailabilityMessage(Demo.ServiceAvailabilityRequest request)
-        {
-            var serviceAvailabilityMessage = _demoServices.ServiceAvailabilityMessage(request);
-            return await serviceAvailabilityMessage.Match(Ok, error => StatusCode(500, error[0].Description));
-        }
-
-        [HttpGet("vendor-availability-response")]
-        public async Task<IActionResult> GetVendorAvailabilityResponse()
-        {
-            return Ok(await _demoServices.GetVendorAvailabilityResponse());
-        }
-        
-        [HttpPost("inform-tenant-vendor-contact")]
-        public async Task<IActionResult> InformToTenantAboutContactFromVendor(Demo.InformTenantVendorContact request)
-        {
-            return Ok(await _demoServices.InformTenantAboutVendorContact(request));
-        }
-
-        [HttpGet("get-vendor-message")]
-        public async Task<IActionResult> GetVendorMessageConfirmationVisit()
-        {
-            return Ok(await _demoServices.VendorConfirmScheduledVisit());
-        }
-
-        [HttpPost("inform-tenant-visit-time")]
-        public async Task<IActionResult> InformTenantVisitTime(Demo.AimeeMessageToTenantRequest request)
-        {
-            return Ok(await _demoServices.InformTenantAboutVisitTime(request));
-        }
-
-        [HttpPost("fix-completed")]
-        public async Task<IActionResult> VendorInformFixHasCompleted(Demo.FixHasCompletedRequest request)
-        {
-            return Ok(await _demoServices.FixHasCompleted(request));
-        }
-        
-        [HttpPost("message-to-vendor-fixed-issue")]
-        public async Task<IActionResult> IssueFixedResponse(Demo.ReplyToVendorIssueFixedRequest request)
-        {
-            return Ok(await _demoServices.ReplyToVendorIssueFixed(request));
-        }
-        
-        [HttpPost("message-to-tenant-close-ticket")]
-        public async Task<IActionResult> MessageToCloseTicket(Demo.MessageToTenantCloseTicketRequest request)
-        {
-            return Ok(await _demoServices.MessageToTenantCloseTicket(request));
-        }
-        
-        [HttpPost("tenant-to-aimee-close-ticket")]
-        public async Task<IActionResult> CloseTicket(Demo.TenantResponseToCloseTicketRequest request)
-        {
-            return Ok(await _demoServices.TenantResponseCloseTicket(request));
-        }
+        // [HttpPost("service-availability-message")]
+        // public async Task<IActionResult> GetServiceAvailabilityMessage(Demo.ServiceAvailabilityRequest request)
+        // {
+        //     var serviceAvailabilityMessage = _demoServices.ServiceAvailabilityMessage(request);
+        //     return await serviceAvailabilityMessage.Match(Ok, error => StatusCode(500, error[0].Description));
+        // }
+        //
+        // [HttpGet("vendor-availability-response")]
+        // public async Task<IActionResult> GetVendorAvailabilityResponse()
+        // {
+        //     return Ok(await _demoServices.GetVendorAvailabilityResponse());
+        // }
+        //
+        // [HttpPost("inform-tenant-vendor-contact")]
+        // public async Task<IActionResult> InformToTenantAboutContactFromVendor(Demo.InformTenantVendorContact request)
+        // {
+        //     return Ok(await _demoServices.InformTenantAboutVendorContact(request));
+        // }
+        //
+        // [HttpGet("get-vendor-message")]
+        // public async Task<IActionResult> GetVendorMessageConfirmationVisit()
+        // {
+        //     return Ok(await _demoServices.VendorConfirmScheduledVisit());
+        // }
+        //
+        // [HttpPost("inform-tenant-visit-time")]
+        // public async Task<IActionResult> InformTenantVisitTime(Demo.AimeeMessageToTenantRequest request)
+        // {
+        //     return Ok(await _demoServices.InformTenantAboutVisitTime(request));
+        // }
+        //
+        // [HttpPost("fix-completed")]
+        // public async Task<IActionResult> VendorInformFixHasCompleted(Demo.FixHasCompletedRequest request)
+        // {
+        //     return Ok(await _demoServices.FixHasCompleted(request));
+        // }
+        //
+        // [HttpPost("message-to-vendor-fixed-issue")]
+        // public async Task<IActionResult> IssueFixedResponse(Demo.ReplyToVendorIssueFixedRequest request)
+        // {
+        //     return Ok(await _demoServices.ReplyToVendorIssueFixed(request));
+        // }
+        //
+        // [HttpPost("message-to-tenant-close-ticket")]
+        // public async Task<IActionResult> MessageToCloseTicket(Demo.MessageToTenantCloseTicketRequest request)
+        // {
+        //     return Ok(await _demoServices.MessageToTenantCloseTicket(request));
+        // }
+        //
+        // [HttpPost("tenant-to-aimee-close-ticket")]
+        // public async Task<IActionResult> CloseTicket(Demo.TenantResponseToCloseTicketRequest request)
+        // {
+        //     return Ok(await _demoServices.TenantResponseCloseTicket(request));
+        // }
         
         #endregion
     }

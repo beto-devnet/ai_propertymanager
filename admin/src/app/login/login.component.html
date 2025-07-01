@@ -1,1 +1,49 @@
-<p>login works!</p>
+<div class="login-container">
+  <div class="login-header">
+    <div class="logo-container">
+      <div class="logo-icon">
+        <div class="logo-dots">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+      </div>
+      <div class="logo-text">DoorX</div>
+    </div>
+    <div class="login-subtitle">Welcome back</div>
+  </div>
+
+  <div class="login-form">
+    <div class="form-group">
+      <label for="email" class="form-label">User</label>
+      <select
+        id="user"
+        name="user"
+        class="form-input"
+        (change)="changeSelectedUser($event)">
+        @for (item of properties(); track $index) {
+          <option [value]="item.id">{{ item.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="password" class="form-label">Password</label>
+      <input
+        [formControl]="passwordControl"
+        type="password"
+        id="password"
+        name="password"
+        class="form-input"
+        placeholder="Enter your password">
+    </div>
+
+    <button type="button" class="login-button" (click)="submit()">
+      Sign In
+    </button>
+
+    <div class="forgot-password">
+      <a href="#">Forgot your password?</a>
+    </div>
+  </div>
+</div>

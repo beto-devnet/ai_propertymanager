@@ -11,7 +11,11 @@ export const routes: Routes = [
     loadComponent:() => import('./admin/admin.component')
   },
   {
-    path: 'ai-chat',
+    path: 'login',
+    loadComponent: () => import('./login/login.component')
+  },
+  {
+    path: 'ai-chat/:id',
     data: {residentId: 0, issue: '' },
     loadComponent: () => import('./demo/demo.component')
   }
