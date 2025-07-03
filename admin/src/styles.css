@@ -26,7 +26,8 @@ body {
 
 /* Angular Material overrides */
 .mat-toolbar {
-  --mat-toolbar-container-background-color: var(--primary-color);
+  /*--mat-toolbar-container-background-color: var(--primary-color);*/
+  --mat-toolbar-container-background-color: #032445;
   --mat-toolbar-container-text-color: white;
   --mat-toolbar-standard-height: var(--toolbar-standard-height);
 }
@@ -151,6 +152,7 @@ textarea:focus {
   margin-top: var(--chat-margin-top);
   margin-bottom: var(--chat-margin-bottom);
   display: grid;
+  /*grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));*/
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 40px;
   width: 100%;
@@ -244,7 +246,8 @@ textarea:focus {
 .iphone {
   margin: 0 auto;
   width: 375px;
-  height: calc(100vh - var(--chat-margin-bottom));
+  /*height: calc(100vh - var(--chat-margin-bottom));*/
+  height: calc(100vh - 95px);
   background: #000;
   border-radius: 40px;
   padding: 8px;

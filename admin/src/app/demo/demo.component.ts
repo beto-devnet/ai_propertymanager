@@ -37,10 +37,11 @@ import {
   RenderMessage, SimpleMessage, WaitingMessageLog
 } from './Flow/LogCoordinator';
 import { NodeBubbleComponent } from '../shared/components/node-bubble/node-bubble.component';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LoginService } from '../login/login.service';
 import { tap } from 'rxjs';
 import { Property2, PropertyBrief } from '../login/models';
+import { MatToolbar } from '@angular/material/toolbar';
 
 type LogType = 'event' | 'vendor' | 'tenant';
 @Component({
@@ -56,7 +57,9 @@ type LogType = 'event' | 'vendor' | 'tenant';
     NgClass,
     TypingDotsComponent,
     EvetLogBubbleComponent,
-    NodeBubbleComponent
+    NodeBubbleComponent,
+    MatToolbar,
+    RouterLink
   ],
   templateUrl: './demo.component.html',
   styleUrl: './demo.component.css'
@@ -345,7 +348,6 @@ export default class DemoComponent implements OnInit {
   private scroll(): void {
     const el: HTMLElement | null = document.getElementById('targetLog');
     if(el !== null) {
-      console.log('scroll');
       el.scrollIntoView({behavior: 'smooth'});
     }
   }

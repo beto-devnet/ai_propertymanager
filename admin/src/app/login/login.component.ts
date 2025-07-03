@@ -5,12 +5,14 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { tap } from 'rxjs';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { NgOptimizedImage } from '@angular/common';
 
 @Component({
   selector: 'app-login',
   imports: [
     ReactiveFormsModule,
-    FormsModule
+    FormsModule,
+    NgOptimizedImage
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'

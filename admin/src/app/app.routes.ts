@@ -3,7 +3,7 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'ai-chat/1',
+    redirectTo: 'login',
     pathMatch: 'full'
   },
   {
@@ -16,7 +16,11 @@ export const routes: Routes = [
   },
   {
     path: 'ai-chat/:id',
-    data: {residentId: 0, issue: '' },
-    loadComponent: () => import('./demo/demo.component')
-  }
+    loadComponent: () => import('./chat/chat.component')
+  },
+  // {
+  //   path: 'ai-chat/:id',
+  //   data: {residentId: 0, issue: '' },
+  //   loadComponent: () => import('./demo/demo.component')
+  // }
 ];
