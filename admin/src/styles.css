@@ -4,12 +4,13 @@
 @tailwind utilities;
 
 :root {
-  --primary-color: #663ffa;
+  --primary-color: #032445;
   --alternative-primary-color: #663ffa4d;
   --primary-color-ligth: #663ffa0f;
   --secondary-color: #313b5e;
   --alternative-secondary-color: #9ca3af;
   --toolbar-standard-height: 64px;
+  --toolbar-color: white;
   --sidenav-width: 250px;
 
   --chat-margin-top:25px;
@@ -26,9 +27,8 @@ body {
 
 /* Angular Material overrides */
 .mat-toolbar {
-  /*--mat-toolbar-container-background-color: var(--primary-color);*/
-  --mat-toolbar-container-background-color: #032445;
-  --mat-toolbar-container-text-color: white;
+  --mat-toolbar-container-background-color: var(--toolbar-color);
+  --mat-toolbar-container-text-color: var(--main-color);
   --mat-toolbar-standard-height: var(--toolbar-standard-height);
 }
 

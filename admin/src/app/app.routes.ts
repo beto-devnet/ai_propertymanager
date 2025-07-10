@@ -15,12 +15,11 @@ export const routes: Routes = [
     loadComponent: () => import('./login/login.component')
   },
   {
-    path: 'ai-chat/:id',
+    path: 'ai-chat-gemini/:id',
     loadComponent: () => import('./chat/chat.component')
   },
-  // {
-  //   path: 'ai-chat/:id',
-  //   data: {residentId: 0, issue: '' },
-  //   loadComponent: () => import('./demo/demo.component')
-  // }
+  {
+    path: 'ai-chat/:id',
+    loadComponent: () => import('./gpt/gpt.component')
+  }
 ];

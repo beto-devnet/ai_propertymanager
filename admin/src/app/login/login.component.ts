@@ -1,18 +1,20 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { LoginService } from './login.service';
 import { PropertyBrief } from './models';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { tap } from 'rxjs';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { NgOptimizedImage } from '@angular/common';
+import { MatRipple } from '@angular/material/core';
 
 @Component({
   selector: 'app-login',
   imports: [
     ReactiveFormsModule,
     FormsModule,
-    NgOptimizedImage
+    NgOptimizedImage,
+    MatRipple
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
@@ -24,6 +26,7 @@ export default class LoginComponent implements OnInit {
   private router: Router = inject(Router);
   selectedUserId: number = 1;
   passwordControl: FormControl = new FormControl<string>('');
+  useGeminiControl: FormControl = new FormControl(false);
   properties = signal<PropertyBrief[]>([]);
 
   ngOnInit(): void {
@@ -43,8 +46,12 @@ export default class LoginComponent implements OnInit {
     if(this.passwordControl.value === '') {
       return;
     }
+    if (this.useGeminiControl.value === false) {
+      this.router.navigate(['/ai-chat', this.selectedUserId]);
+    } else {
+      this.router.navigate(['/ai-chat-gemini', this.selectedUserId]);
+    }
 
-    this.router.navigate(['/ai-chat', this.selectedUserId]);
   }
 
   changeSelectedUser(ev: any) {

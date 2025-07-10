@@ -65,7 +65,7 @@ Step 1. Tenant Issue request.
 In this step, you have to be able to categorize the issue and provide a kindle and warm response to the tenant.
 Also, Identify the resolution responsibility from the Clauses list leasing Response with 'Tenant', 'Landlord', or 'Unknown'.
 If the issue is not clear, then, ask the tenant for more details and does not mark this step as completed.
-If the issue is clear, then execute step 2 and mark step 1 as completed.
+If the issue is clear, then mark step 1 as completed.
 Return the parameters:
 \tstepNumber: 1,
 \tstepName: Name of the step,
@@ -77,13 +77,13 @@ Return the parameters:
 
 Step 2. Contact the vendor and request for availability to take or not the job.
 This step waits a message from Aimee that indicates the name of the selected vendor and the name of the vendor company.
-You have to contact to the vendor and ask if it is available to take the job and contact the tenant directy in order to schedule a visit.
+The result of this step is to write a message to the vendor vendor asking if is available to take the job and contact the tenant directy in order to schedule a visit.
 Return the parameters:
 \tstepNumber: 2,
 \tstepName: 'Contact to vendor',
 \tisCompleted: true.
 \tMessageToVendor: The message to vendor asking about the availability.
-\tMessageToTenant: Nothing.\t
+\tMessageToTenant: Nothing.
 
 step 3. Validate vendor abailability.
 In this step you expected a message from the vendor. You have to validate if the vendor is available to take the job or not.
@@ -99,6 +99,7 @@ Return the parameters:
 
 step 4. Validate if the vendor scheduled a a visit with the tenant.
 This step is waiting a vendor message. You have to obtain the date and time for the visit. If the vendor was not able to sheduled the visit, identify the reason or ask to the vendor the reason.
+Once you get the reason, stop the flow.
 If the date or time is not clear, ask for more details and not complete this step.
 Otherwise, if the date and time are clear, mark this step as completed and wait for a vendor message in step 5.
 Return the parameters:
@@ -140,8 +141,24 @@ If a step is not completed, then, cannot move to the next step.
 It is important to greet the tenant warmly and include any commentary or explanation that helps them understand you are here to assist and ensure a timely resolution of their request.
 
 For each incomming message from vendor or tenant, determinate the corresponding step number.
+You expected to receiving messages from tenant in the format tenant: <message>, expected receiving messages from vendor in format: vendor: <message>. expected receiving messages from Aimee in format: Aimee: <message>.
 
-If there is no corresponding step, set the current step to 0, then, return a generic message as response.`
+If messages from vendor are not realted with availability to take job or schedule confirmation or issue resolution, or is asking about more information, then return formulate a message to the vendor and return with the following parameters:
+\tstepNumber: 0,
+\tstepName: 'Reply to Vendor',
+\tisCompleted: true
+\tMessageToVendor: Message to vendor.
+\tMessageToTenant: Nothing.
+\treasonForStopFlow: the reason of the tenant.
+
+
+if messages from tenant are not related with validation of issue ws fixed, or if is asking for more information, then, then return formulate a message to the tenant and return with the following parameters:
+stepNumber: 0,
+\tstepName: 'Reply to Tenant',
+\tisCompleted: true
+\tMessageToVendor: Nothing.
+\tMessageToTenant: Message to Tenant.
+\treasonForStopFlow: nothing.`
 
   issueMessageControl: FormControl = new FormControl<string>('');
   tenantMessageControl: FormControl = new FormControl<string>('');
@@ -161,58 +178,6 @@ If there is no corresponding step, set the current step to 0, then, return a gen
   private sleepTime = 2000;
 
   constructor() {
-    // // register issue
-    // const issueMessage = "Hi I am Anuar Bajos. Address 106 Bluejay dr. Orlando FL 32189. Issue:I have a problem with the AC. It is not working";
-    // this.flowEngine.registerMessageFromVendor(issueMessage);
-    //
-    // this.flowEngine.registerIssue({ tenant: 'Anuar Bajos', message: 'I have a problem with the AC. It is not working', category: 'HVAC', address: '106 Bluejay dr. Orlando FL 32189' })
-    // this.registerAimeeLog();
-    //
-    // // response from aimee
-    // this.flowEngine.registerResponse({
-    //   isCompleted:true,
-    //   stepNumber:1,
-    //   Category:"HVAC",
-    //   MessageToTenant:"Hi Anuar, thanks for reaching out! I'm Aimee, a member of your Customer Success Team. I understand your AC isn't cooling, and I'm here to help get this resolved for you quickly. I've categorized this as an HVAC issue.",
-    //   MessageToVendor:"",
-    //   reasonForStopFlow: '',
-    //   resolutionResponsibility: 'Lanlord'
-    // });
-    // this.registerAimeeLog().then();
-    //
-    // this.typingTenant.set(true);
-    // this.sleepBetweenSteps(1500).then(() => {});
-    // const msg: BubbleMessage = { isFromAimee: true, message: 'Hi Anuar, thanks for reaching out! I\'m Aimee, a member of your Customer Success Team. I understand your AC isn\'t cooling, and I\'m here to help get this resolved for you quickly. I\'ve categorized this as an HVAC issue.' };
-    // this.tenantMessages.update(messages => [...messages, msg]);
-    // this.typingTenant.set(false);
-    //
-    // //message selected vendor
-    // const chat2: ChatResponse = {
-    //   isCompleted: true,
-    //   stepNumber: 2,
-    //   MessageToTenant: "",
-    //   MessageToVendor: "Hi Mary Joe from Total Air Conditioning, we have a maintenance request at 106 Bluejay dr. Orlando FL 32189. The AC is not cooling. Could you please confirm your availability to take this job and contact the tenant, Anuar Bajos, directly to schedule a visit?",
-    //   reasonForStopFlow: ""
-    // }
-    // this.vendorMessages.update(messages => [...messages, { isFromAimee: true, message: chat2.MessageToVendor }]);
-    // this.flowEngine.registerResponse(chat2);
-    // this.registerAimeeLog();
-    //
-    // // vendor available response
-    // const vendorResponse1 = 'Yes I am available to contact the tenant and take the job';
-    // const chat3: ChatResponse = {
-    //   isCompleted:true,
-    //   stepNumber:3,
-    //   MessageToTenant:"That's great news, Anuar! Mary Joe from Total Air Conditioning has confirmed her availability and will be reaching out to you directly to schedule a visit to fix your AC. Please expect to hear from her soon.",
-    //   MessageToVendor:"Great, thanks Mary Joe! Please keep me updated once you've scheduled a visit with Anuar.",
-    //   reasonForStopFlow: '',
-    // }
-    // this.vendorMessages.update(messages => [...messages, { isFromAimee: false, message: vendorResponse1 }]);
-    // this.flowEngine.registerResponse(chat3);
-    // this.registerAimeeLog();
-    //
-    // this.vendorMessages.update(messages => [...messages, { isFromAimee: true, message: chat3.MessageToVendor }]);
-    // this.tenantMessages.update(messages => [...messages, { isFromAimee: true, message: chat3.MessageToTenant }]);
   }
 
   ngOnInit(): void {
@@ -355,12 +320,13 @@ If there is no corresponding step, set the current step to 0, then, return a gen
       message: issue,
       tenant: this.propertySelected.tenant.name,
       address: this.propertySelected.address,
+      phone: this.propertySelected.tenant.telephone,
       category: this.categoryNameSelected
     };
     this.flowEngine.registerIssue(issueMessage);
     await this.registerAimeeLog()
 
-    if(MessageToTenant !== '') {
+    if(MessageToTenant !== '' && MessageToTenant !== undefined) {
       this.typingTenant.set(true);
       await this.sleepBetweenSteps(1500);
       const msg: BubbleMessage = { isFromAimee: true, message: MessageToTenant };
@@ -368,7 +334,7 @@ If there is no corresponding step, set the current step to 0, then, return a gen
       this.typingTenant.set(false);
     }
 
-    if(MessageToVendor !== '') {
+    if(MessageToVendor !== '' && MessageToVendor !== undefined) {
       this.typingVendor.set(true);
       await this.sleepBetweenSteps(1500);
       const msg: BubbleMessage = { isFromAimee: true, message: MessageToVendor };
@@ -382,6 +348,7 @@ If there is no corresponding step, set the current step to 0, then, return a gen
     }
 
     this.blockButton.set(false);
+    console.log(this.flowEngine);
   }
 
   async sendMessageFromTenant(): Promise<void> {
@@ -400,7 +367,7 @@ If there is no corresponding step, set the current step to 0, then, return a gen
     await this.registerAimeeLog();
 
     const response = await this.chat.sendMessage({
-      message: `Message from Tenant: ${message.trim()}`,
+      message: `tenant: ${message.trim()}`,
     });
 
     const chatResponse = this.composable.convertToChatResponse(response);
@@ -434,7 +401,7 @@ If there is no corresponding step, set the current step to 0, then, return a gen
     await this.registerAimeeLog();
 
     const response = await this.chat.sendMessage({
-      message: `Message from Vendor: ${message.trim()}`,
+      message: `vendor: ${message.trim()}`,
     });
 
     const chatResponse = this.composable.convertToChatResponse(response);
@@ -456,13 +423,13 @@ If there is no corresponding step, set the current step to 0, then, return a gen
 
     const { MessageToVendor, MessageToTenant, stepNumber, isCompleted } = chat;
 
-    if(MessageToTenant !== '') {
+    if(MessageToTenant.trim().toLowerCase() !== '' || 'nothing.' || 'nothing' || undefined) {
       const msg: BubbleMessage = { isFromAimee: true, message: MessageToTenant };
       this.tenantMessages.update(messages => [...messages, msg]);
       this.scrollTenantLog();
     }
 
-    if(MessageToVendor !== '') {
+    if(MessageToVendor.trim().toLowerCase() !== '' || 'nothing.' || 'nothing' || undefined) {
       const msg: BubbleMessage = { isFromAimee: true, message: MessageToVendor };
       this.vendorMessages.update(messages => [...messages, msg]);
       this.scrollVendorLog();
@@ -481,6 +448,7 @@ If there is no corresponding step, set the current step to 0, then, return a gen
       this.flowEngine.registerMessageFromAimee('Ticket completed');
       await this.registerAimeeLog();
     }
+    console.log(this.flowEngine);
   }
 
   private async registerAimeeLog() {
@@ -507,7 +475,7 @@ If there is no corresponding step, set the current step to 0, then, return a gen
 
     this.selectedVendorName = vendor.contacts[0].name;
 
-    this.flowEngine.registerMessageFromAimee(`Selected vendor is ${vendor.contacts[0].name} from company ${vendor.companyName}`);
+    this.flowEngine.registerMessageFromAimee(`aimee: Selected vendor is ${vendor.contacts[0].name} from company ${vendor.companyName}`);
     await this.registerAimeeLog();
 
     const messageFromAimee = await this.chat.sendMessage({

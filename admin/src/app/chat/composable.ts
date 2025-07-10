@@ -11,7 +11,6 @@ export function Composable() {
     }
   }
 
-
   return {
     convertToChatResponse
   }

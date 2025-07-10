@@ -1,4 +1,4 @@
-$version = 'v0.2.3'
+$version = 'v0.5.2'
 $environment = 'staging'
 $tag = ''
 
