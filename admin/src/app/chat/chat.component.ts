@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, inject, OnInit, AfterViewChecked, signal, ViewChild } from '@angular/core';
 import { Chat, GoogleGenAI } from '@google/genai';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -43,7 +43,7 @@ import { MessageBuilder } from '../shared/Engine/MessageBuider';
   templateUrl: './chat.component.html',
   styleUrl: './chat.component.css'
 })
-export default class ChatComponent implements OnInit {
+export default class ChatComponent implements OnInit, AfterViewChecked {
 
   private activatedRoute = inject(ActivatedRoute);
   private service: ChatService = inject(ChatService);
@@ -175,8 +175,10 @@ stepNumber: 0,
 
   typingVendor = signal<boolean>(false);
   typingTenant = signal<boolean>(false);
-
   blockButton = signal<boolean>(false);
+
+  @ViewChild('scrollToTenant') private scrollTenant!: ElementRef;
+  @ViewChild('scrollToVendor') private scrollVendor!: ElementRef;
 
   private readonly messageEngine: MessageEngine;
 
@@ -184,7 +186,14 @@ stepNumber: 0,
     this.messageEngine = new MessageEngine();
   }
 
-  ngOnInit(): void {
+  ngAfterViewChecked() {
+      try {
+        this.scrollVendor.nativeElement.scrollIntoView({ behavior: 'smooth' });
+        this.scrollTenant.nativeElement.scrollIntoView({ behavior: 'smooth' });
+      } catch (err) { }
+  }
+
+  async ngOnInit(): Promise<void> {
     this.selectedUserId = Number.parseInt(this.activatedRoute.snapshot.params['id'] || '1');
     this.loadExampleIssues();
     this.loadAllVendors();
@@ -262,7 +271,7 @@ stepNumber: 0,
     }
   }
 
-  private messageLogs = () => {
+  private messagesLogUI = () => {
     const addToAgent = (message: IMessage): void=> {
       this.agentMessage.update(messages =>  [...messages, message]);
     }
@@ -296,7 +305,7 @@ stepNumber: 0,
     }
 
     if(!this.messageEngine.isEmpty()) {
-      this.messageLogs().resetAll();
+      this.messagesLogUI().resetAll();
       this.messageEngine.reset();
       this.creteAIChat(this.prompt);
     }
@@ -330,13 +339,13 @@ stepNumber: 0,
       .getMessage() as IMessage;
     this.messageEngine.addMessage(issueMessage);
 
-    this.messageLogs().addToAgent(this.messageEngine.lastMessage);
+    this.messagesLogUI().addToAgent(this.messageEngine.lastMessage);
 
     if(MessageToTenant !== '' && MessageToTenant !== undefined) {
       this.typingTenant.set(true);
       await this.sleepBetweenSteps(1500);
       const messageToTenant: ISimpleMessage = new MessageBuilder().createNewSimpleMessage(MessageToTenant!).asReceiveMessage().getMessage() as ISimpleMessage;
-      this.messageLogs().addToTenant(messageToTenant);
+      this.messagesLogUI().addToTenant(messageToTenant);
       this.typingTenant.set(false);
     }
 
@@ -344,7 +353,7 @@ stepNumber: 0,
       this.typingVendor.set(true);
       await this.sleepBetweenSteps(1500);
       const messageToVendor: ISimpleMessage = new MessageBuilder().createNewSimpleMessage(MessageToVendor!).asReceiveMessage().getMessage() as ISimpleMessage;
-      this.messageLogs().addToVendor(messageToVendor);
+      this.messagesLogUI().addToVendor(messageToVendor);
       this.typingVendor.set(false);
     }
 
@@ -365,8 +374,7 @@ stepNumber: 0,
     this.tenantMessageControl.reset();
 
     const registerMessage: ISimpleMessage = new MessageBuilder().createNewSimpleMessage(message).asSentMessage().getMessage() as ISimpleMessage;
-    this.messageLogs().addToTenant(registerMessage);
-    this.scrollTenantLog();
+    this.messagesLogUI().addToTenant(registerMessage);
 
     const response = await this.chat.sendMessage({
       message: `tenant: ${message.trim()}`,
@@ -389,7 +397,7 @@ stepNumber: 0,
     }
 
     const logMessage = logMessageBuilder.getMessage() as IMessage;
-    this.messageLogs().addToAgent(logMessage);
+    this.messagesLogUI().addToAgent(logMessage);
     this.messageEngine.addMessage(logMessage);
 
     await this.showMessageToVendor(MessageToVendor)
@@ -405,7 +413,7 @@ stepNumber: 0,
         .withDescription('The ticket has been completed successfully')
         .getMessage() as IMessage;
 
-      this.messageLogs().addToAgent(finishedMessage);
+      this.messagesLogUI().addToAgent(finishedMessage);
       this.messageEngine.addMessage(finishedMessage);
     }
   }
@@ -419,8 +427,7 @@ stepNumber: 0,
     this.vendorMessageControl.reset();
 
     const vendorMessage = new MessageBuilder().createNewSimpleMessage(message).asSentMessage().getMessage() as ISimpleMessage;
-    this.messageLogs().addToVendor(vendorMessage);
-    this.scrollVendorLog();
+    this.messagesLogUI().addToVendor(vendorMessage);
 
     const response = await this.chat.sendMessage({
       message: `vendor: ${message.trim()}`,
@@ -443,7 +450,7 @@ stepNumber: 0,
     }
     const logChat = logChatBuilder.getMessage() as IMessage;
     this.messageEngine.addMessage(logChat);
-    this.messageLogs().addToAgent(logChat);
+    this.messagesLogUI().addToAgent(logChat);
 
     await this.showMessageToVendor(MessageToVendor)
     await this.showMessageToTenant(MessageToTenant);
@@ -485,24 +492,22 @@ stepNumber: 0,
       .withContent('Message to Vendor', MessageToVendor)
       .getMessage() as IMessage;
 
-    this.messageLogs().addToAgent(updateMessage);
+    this.messagesLogUI().addToAgent(updateMessage);
 
     if(MessageToTenant !== '') {
       this.typingTenant.set(true);
       await this.sleepBetweenSteps(1500);
       const message = new MessageBuilder().createNewSimpleMessage(MessageToTenant).asReceiveMessage().getMessage() as ISimpleMessage;
-      this.messageLogs().addToTenant(message);
+      this.messagesLogUI().addToTenant(message);
       this.typingTenant.set(false);
-      this.scrollAimeeLog();
     }
 
     if(MessageToVendor !== '') {
       this.typingVendor.set(true);
       await this.sleepBetweenSteps(1500);
       const message = new MessageBuilder().createNewSimpleMessage(MessageToVendor).asReceiveMessage().getMessage() as ISimpleMessage;
-      this.messageLogs().addToVendor(message);
+      this.messagesLogUI().addToVendor(message);
       this.typingVendor.set(false);
-      this.scrollAimeeLog();
     }
 
   }
@@ -520,7 +525,7 @@ stepNumber: 0,
       this.typingTenant.set(true);
       await this.sleepBetweenSteps(1500);
       const simpleMessage: ISimpleMessage = new MessageBuilder().createNewSimpleMessage(message).asReceiveMessage().getMessage() as ISimpleMessage;
-      this.messageLogs().addToTenant(simpleMessage);
+      this.messagesLogUI().addToTenant(simpleMessage);
       this.typingTenant.set(false);
     }
   }
@@ -530,29 +535,8 @@ stepNumber: 0,
       this.typingTenant.set(true);
       await this.sleepBetweenSteps(1500);
       const simpleMessage: ISimpleMessage = new MessageBuilder().createNewSimpleMessage(message).asReceiveMessage().getMessage() as ISimpleMessage;
-      this.messageLogs().addToVendor(simpleMessage);
+      this.messagesLogUI().addToVendor(simpleMessage);
       this.typingTenant.set(false);
-    }
-  }
-
-  private scrollAimeeLog(): void {
-    const el: HTMLElement | null = document.getElementById('targetAime');
-    if(el !== null) {
-      el.scrollIntoView({behavior: 'smooth'});
-    }
-  }
-
-  private scrollVendorLog(): void {
-    const el: HTMLElement | null = document.getElementById('targetVendor');
-    if(el !== null) {
-      el.scrollIntoView({behavior: 'smooth'});
-    }
-  }
-
-  private scrollTenantLog(): void {
-    const el: HTMLElement | null = document.getElementById('targetTenant');
-    if(el !== null) {
-      el.scrollIntoView({behavior: 'smooth'});
     }
   }
 

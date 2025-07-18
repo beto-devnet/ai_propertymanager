@@ -1,4 +1,4 @@
-import { Component, effect, input, OnInit, signal } from '@angular/core';
+import { Component, effect, ElementRef, input, OnInit, AfterViewChecked, signal, ViewChild } from '@angular/core';
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { MatIcon } from '@angular/material/icon';
 import { IMessage } from '../../Engine/MessageEngine';
@@ -15,19 +15,33 @@ import { TypingDotsComponent } from '../typing-dots/typing-dots.component';
   templateUrl: './aime-console.component.html',
   styleUrl: './aime-console.component.css'
 })
-export class AimeConsoleComponent implements OnInit {
+export class AimeConsoleComponent implements OnInit, AfterViewChecked {
   messages = input<IMessage[]>([]);
   typing = signal<boolean>(false);
+  @ViewChild('scrollTo') private scrollContainer!: ElementRef;
 
   constructor() {
     effect(async () => {
-      this.typing.set(true);
-      await this.sleepProcess(1500);
-      this.typing.set(false);
+      const length = this.messages().length;
+      if (length > 0) {
+        this.typing.set(true);
+        await this.sleepProcess(2000);
+        this.typing.set(false);
+      }
     });
   }
 
   ngOnInit(): void {
+  }
+
+  ngAfterViewChecked(): void {
+    this.scrollToBottom();
+  }
+
+  private scrollToBottom(): void {
+    try {
+      this.scrollContainer.nativeElement.scrollIntoView({ behavior: 'smooth' });
+    } catch (err) { }
   }
 
   private async sleepProcess(ms: number = 3000): Promise<void> {
