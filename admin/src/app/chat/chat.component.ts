@@ -366,9 +366,11 @@ stepNumber: 0,
     const registerMessage: ISimpleMessage = new MessageBuilder().createNewSimpleMessage(message).asSentMessage().getMessage() as ISimpleMessage;
     this.messagesLogUI().addToTenant(registerMessage);
 
+    this.typingTenant.set(true);
     const response = await this.chat.sendMessage({
       message: `tenant: ${message.trim()}`,
     });
+    this.typingTenant.set(false);
 
     const chatResponse = this.composable.convertToChatResponse(response);
     if(chatResponse == null) {
@@ -427,7 +429,9 @@ stepNumber: 0,
       message: `vendor: ${message.trim()}`,
     });
 
+    this.typingVendor.set(true);
     const chatResponse = this.composable.convertToChatResponse(response);
+    this.typingVendor.set(false);
     if(chatResponse == null) {
       return;
     }
