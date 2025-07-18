@@ -1,26 +1,29 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { Chat, GoogleGenAI } from '@google/genai';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { ChatResponse } from './models/response';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ChatService } from './chat.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Category } from './models/Category';
 import { Vendor } from './models/Vendor';
 import { Composable } from './composable';
-import { map, tap, withLatestFrom } from 'rxjs';
+import { map, Observable, tap, withLatestFrom } from 'rxjs';
 import { Property2, LeaseAgreementClause } from '../login/models';
 import { LoginService } from '../login/login.service';
 import { MatIcon } from '@angular/material/icon';
 import { MatRipple } from '@angular/material/core';
-import { FlowEngine } from './FlowEngine';
-import { BubbleMessage, Message } from './models/Message';
-import { NgOptimizedImage } from '@angular/common';
-import { IssueResponse } from './models/IssueResponse';
+import { NgClass, NgOptimizedImage } from '@angular/common';
 import { TypingDotsComponent } from '../shared/components/typing-dots/typing-dots.component';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { Example } from './models/Example';
 import { MatToolbar } from '@angular/material/toolbar';
+import { AimeConsoleComponent } from '../shared/components/aime-console/aime-console.component';
+import {
+  IMessage,
+  ISimpleMessage,
+  MessageEngine
+} from '../shared/Engine/MessageEngine';
+import { MessageBuilder } from '../shared/Engine/MessageBuider';
 
 
 @Component({
@@ -33,7 +36,9 @@ import { MatToolbar } from '@angular/material/toolbar';
     TypingDotsComponent,
     MatPaginator,
     MatToolbar,
-    RouterLink
+    RouterLink,
+    AimeConsoleComponent,
+    NgClass
   ],
   templateUrl: './chat.component.html',
   styleUrl: './chat.component.css'
@@ -164,56 +169,27 @@ stepNumber: 0,
   tenantMessageControl: FormControl = new FormControl<string>('');
   vendorMessageControl: FormControl = new FormControl<string>('');
 
-  tenantMessages = signal<BubbleMessage[]>([]);
-  vendorMessages = signal<BubbleMessage[]>([]);
-  aimeeMessages = signal<Array<ChatResponse|Message|IssueResponse>>([]);
+  tenantMessages = signal<ISimpleMessage[]>([]);
+  vendorMessages = signal<ISimpleMessage[]>([]);
+  agentMessage = signal<IMessage[]>([]);
 
-  typingAimee = signal<boolean>(false);
   typingVendor = signal<boolean>(false);
   typingTenant = signal<boolean>(false);
 
   blockButton = signal<boolean>(false);
 
-  private flowEngine: FlowEngine = new FlowEngine();
-  private sleepTime = 2000;
+  private readonly messageEngine: MessageEngine;
 
   constructor() {
+    this.messageEngine = new MessageEngine();
   }
 
   ngOnInit(): void {
     this.selectedUserId = Number.parseInt(this.activatedRoute.snapshot.params['id'] || '1');
-
-    this.service.getIssues().pipe(takeUntilDestroyed(this.destroyedRef$)).subscribe((examples: Example[]) => {
-      this.examples = examples;
-      this.issueMessageControl.setValue(examples[0].issue);
-    });
-
-    const categories = this.service
-      .getCategories()
-      .pipe(
-        takeUntilDestroyed(this.destroyedRef$),
-        map((categories: Category[]) => categories.map((category: Category) => category.name).join(', '))
-      );
-
-    const clauses = this.loginService
-      .allProperties()
-      .pipe(
-        takeUntilDestroyed(this.destroyedRef$),
-        map((result: Property2[]) => result.find(x => x.id === this.selectedUserId) || result[0]),
-        tap((propertyResult: Property2) => this.propertySelected = propertyResult),
-        map(property => property.leaseAgreementClauses),
-        map((clauses: LeaseAgreementClause[]) => {
-          let clausesSting = 'Clauses: \n';
-          clauses.forEach((clause: LeaseAgreementClause, index) => {
-            clausesSting += `\n\t${index+1}. ${clause.category} \n\t- ${clause.clause}`
-          });
-
-          if(clauses.length == 0) {
-            clausesSting += 'No clauses.';
-          }
-          return clausesSting;
-        })
-      );
+    this.loadExampleIssues();
+    this.loadAllVendors();
+    const categories = this.loadAllCategoriesSub();
+    const clauses = this.loadAllClausesSub();
 
     categories.pipe(
       withLatestFrom(clauses),
@@ -229,7 +205,6 @@ stepNumber: 0,
       this.creteAIChat(prompt);
     });
 
-    this.service.getVendors().pipe(takeUntilDestroyed(this.destroyedRef$)).subscribe((vendors: Vendor[]) => this.vendors = vendors);
   }
 
   handlePageEvent(event$: PageEvent): void {
@@ -238,51 +213,80 @@ stepNumber: 0,
   }
 
   private creteAIChat(prompt: string){
-    this.chat = this.ai.chats.create({
-      model: this.model,
-      config: {
-        thinkingConfig: {
-          thinkingBudget: 0
-        },
-        responseMimeType: 'application/json',
-        responseSchema: {
-          "type": "object",
-          "properties": {
-            "stepNumber": {
-              "type": "number"
-            },
-            "stepName": {
-              "type": "string"
-            },
-            "isCompleted": {
-              "type": "boolean"
-            },
-            "MessageToVendor": {
-              "type": "string"
-            },
-            "MessageToTenant": {
-              "type": "string"
-            },
-            "reasonForStopFlow": {
-              "type": "string"
-            },
-            "Category": {
-              "type": "string"
-            },
-            "resolutionResponsibility": {
-              "type": "string"
-            }
+    if(!this.chat) {
+      this.chat = this.ai.chats.create({
+        model: this.model,
+        config: {
+          thinkingConfig: {
+            thinkingBudget: 0
           },
-          "required": [
-            "stepNumber",
-            "isCompleted",
-            "stepName"
-          ]
+          responseMimeType: 'application/json',
+          responseSchema: {
+            "type": "object",
+            "properties": {
+              "stepNumber": {
+                "type": "number"
+              },
+              "stepName": {
+                "type": "string"
+              },
+              "isCompleted": {
+                "type": "boolean"
+              },
+              "MessageToVendor": {
+                "type": "string"
+              },
+              "MessageToTenant": {
+                "type": "string"
+              },
+              "reasonForStopFlow": {
+                "type": "string"
+              },
+              "Category": {
+                "type": "string"
+              },
+              "resolutionResponsibility": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "stepNumber",
+              "isCompleted",
+              "stepName"
+            ]
+          },
+          systemInstruction: prompt
         },
-        systemInstruction: prompt
-      },
-      history: []
-    });
+        history: []
+      });
+    }
+  }
+
+  private messageLogs = () => {
+    const addToAgent = (message: IMessage): void=> {
+      this.agentMessage.update(messages =>  [...messages, message]);
+    }
+
+    const addToTenant = (message: ISimpleMessage): void=> {
+      this.tenantMessages.update(messages =>  [...messages, message]);
+    }
+
+    const addToVendor = (message: ISimpleMessage): void=> {
+      this.vendorMessages.update(messages =>  [...messages, message]);
+    }
+
+    const resetAll = () => {
+      this.agentMessage.set([]);
+      this.vendorMessages.set([]);
+      this.tenantMessages.set([]);
+    }
+
+    return {
+      addToAgent,
+      addToTenant,
+      addToVendor,
+      resetAll
+    }
   }
 
   async processIssue(): Promise<void> {
@@ -291,11 +295,9 @@ stepNumber: 0,
       return;
     }
 
-    if(!this.flowEngine.IsEmpty) {
-      this.tenantMessages.set([]);
-      this.vendorMessages.set([]);
-      this.aimeeMessages.set([]);
-      this.flowEngine.reset();
+    if(!this.messageEngine.isEmpty()) {
+      this.messageLogs().resetAll();
+      this.messageEngine.reset();
       this.creteAIChat(this.prompt);
     }
 
@@ -304,7 +306,6 @@ stepNumber: 0,
 
     const message = `Hi I am ${this.propertySelected.tenant.name}.\nAddress ${this.propertySelected.address}. \nIssue:\n ${issue.trim()}`;
 
-    this.flowEngine.registerMessageFromTenant(message);
     const response = await this.chat.sendMessage({ message });
 
     const chatResponse = this.composable.convertToChatResponse(response);
@@ -312,33 +313,38 @@ stepNumber: 0,
       return;
     }
 
-    this.flowEngine.registerResponse(chatResponse);
-
     const { MessageToVendor, MessageToTenant, Category } = chatResponse;
+    const { name, telephone } = this.propertySelected.tenant;
+    const { address } = this.propertySelected;
     this.categoryNameSelected = Category || '';
-    const issueMessage: IssueResponse = {
-      message: issue,
-      tenant: this.propertySelected.tenant.name,
-      address: this.propertySelected.address,
-      phone: this.propertySelected.tenant.telephone,
-      category: this.categoryNameSelected
-    };
-    this.flowEngine.registerIssue(issueMessage);
-    await this.registerAimeeLog()
+
+    const issueMessage = new MessageBuilder()
+      .createNewLogMessage()
+      .withTitle('Issue Request')
+      .withContent('Category', Category!)
+      .withContent('Resident', name)
+      .withContent('Address', address)
+      .withContent('Phone', telephone)
+      .withContent('Issue', issue)
+      .withContent('Reply to Tenant', MessageToTenant)
+      .getMessage() as IMessage;
+    this.messageEngine.addMessage(issueMessage);
+
+    this.messageLogs().addToAgent(this.messageEngine.lastMessage);
 
     if(MessageToTenant !== '' && MessageToTenant !== undefined) {
       this.typingTenant.set(true);
       await this.sleepBetweenSteps(1500);
-      const msg: BubbleMessage = { isFromAimee: true, message: MessageToTenant };
-      this.tenantMessages.update(messages => [...messages, msg])
+      const messageToTenant: ISimpleMessage = new MessageBuilder().createNewSimpleMessage(MessageToTenant!).asReceiveMessage().getMessage() as ISimpleMessage;
+      this.messageLogs().addToTenant(messageToTenant);
       this.typingTenant.set(false);
     }
 
     if(MessageToVendor !== '' && MessageToVendor !== undefined) {
       this.typingVendor.set(true);
       await this.sleepBetweenSteps(1500);
-      const msg: BubbleMessage = { isFromAimee: true, message: MessageToVendor };
-      this.vendorMessages.update(messages => [...messages, msg]);
+      const messageToVendor: ISimpleMessage = new MessageBuilder().createNewSimpleMessage(MessageToVendor!).asReceiveMessage().getMessage() as ISimpleMessage;
+      this.messageLogs().addToVendor(messageToVendor);
       this.typingVendor.set(false);
     }
 
@@ -348,10 +354,9 @@ stepNumber: 0,
     }
 
     this.blockButton.set(false);
-    console.log(this.flowEngine);
   }
 
-  async sendMessageFromTenant(): Promise<void> {
+  async processMessageFromTenant(): Promise<void> {
     const message = this.tenantMessageControl.value
     if (!message) {
       return;
@@ -359,12 +364,9 @@ stepNumber: 0,
 
     this.tenantMessageControl.reset();
 
-    const msg: BubbleMessage = { isFromAimee: false, message: message };
-    this.tenantMessages.update(messages => [...messages, msg]);
+    const registerMessage: ISimpleMessage = new MessageBuilder().createNewSimpleMessage(message).asSentMessage().getMessage() as ISimpleMessage;
+    this.messageLogs().addToTenant(registerMessage);
     this.scrollTenantLog();
-
-    this.flowEngine.registerMessageFromTenant(message);
-    await this.registerAimeeLog();
 
     const response = await this.chat.sendMessage({
       message: `tenant: ${message.trim()}`,
@@ -375,17 +377,40 @@ stepNumber: 0,
       return;
     }
 
-    await this.logResponses(chatResponse);
+    const { MessageToTenant, MessageToVendor } = chatResponse;
+    const logMessageBuilder = new MessageBuilder()
+      .createNewLogMessage()
+      .withTitle('Message from Tenant')
+      .withContent('Message', message)
+      .withContent('Reply', MessageToTenant);
+
+    if (MessageToVendor) {
+      logMessageBuilder.withContent('Message to Vendor', MessageToVendor);
+    }
+
+    const logMessage = logMessageBuilder.getMessage() as IMessage;
+    this.messageLogs().addToAgent(logMessage);
+    this.messageEngine.addMessage(logMessage);
+
+    await this.showMessageToVendor(MessageToVendor)
+    await this.showMessageToTenant(MessageToTenant);
 
     if(chatResponse.stepNumber === 1 && chatResponse.isCompleted) {
       const category = chatResponse.Category ?? 'general';
       await this.selectVendor(category);
     } else if(chatResponse.stepNumber === 6 && chatResponse.isCompleted) {
+      const finishedMessage = new MessageBuilder()
+        .createNewLogMessage()
+        .withTitle('Ticket Completed')
+        .withDescription('The ticket has been completed successfully')
+        .getMessage() as IMessage;
 
+      this.messageLogs().addToAgent(finishedMessage);
+      this.messageEngine.addMessage(finishedMessage);
     }
   }
 
-  async sendMessageFromVendor(): Promise<void> {
+  async processMessageFromVendor(): Promise<void> {
     const message = this.vendorMessageControl.value
     if (!message) {
       return;
@@ -393,12 +418,9 @@ stepNumber: 0,
 
     this.vendorMessageControl.reset();
 
-    const msg: BubbleMessage = { isFromAimee: false, message: message };
-    this.vendorMessages.update(messages => [...messages, msg]);
+    const vendorMessage = new MessageBuilder().createNewSimpleMessage(message).asSentMessage().getMessage() as ISimpleMessage;
+    this.messageLogs().addToVendor(vendorMessage);
     this.scrollVendorLog();
-
-    this.flowEngine.registerMessageFromVendor(message);
-    await this.registerAimeeLog();
 
     const response = await this.chat.sendMessage({
       message: `vendor: ${message.trim()}`,
@@ -408,55 +430,27 @@ stepNumber: 0,
     if(chatResponse == null) {
       return;
     }
-    await this.logResponses(chatResponse);
 
-    const {stepNumber, isCompleted} = chatResponse;
+    const { MessageToVendor, MessageToTenant, stepNumber, isCompleted } = chatResponse;
+    const logChatBuilder = new MessageBuilder()
+      .createNewLogMessage()
+      .withTitle('Message from Vendor')
+      .withContent('Message', message)
+      .withContent('Reply', MessageToVendor);
+
+    if (MessageToTenant) {
+      logChatBuilder.withContent('Message to Tenant', MessageToTenant);
+    }
+    const logChat = logChatBuilder.getMessage() as IMessage;
+    this.messageEngine.addMessage(logChat);
+    this.messageLogs().addToAgent(logChat);
+
+    await this.showMessageToVendor(MessageToVendor)
+    await this.showMessageToTenant(MessageToTenant);
+
     if(stepNumber === 3 && !isCompleted) {
       await this.selectVendor(this.categoryNameSelected);
     }
-
-  }
-
-  private async logResponses(chat: ChatResponse): Promise<void> {
-    this.flowEngine.registerResponse(chat);
-    await this.registerAimeeLog();
-
-    const { MessageToVendor, MessageToTenant, stepNumber, isCompleted } = chat;
-
-    if(MessageToTenant.trim().toLowerCase() !== '' || 'nothing.' || 'nothing' || undefined) {
-      const msg: BubbleMessage = { isFromAimee: true, message: MessageToTenant };
-      this.tenantMessages.update(messages => [...messages, msg]);
-      this.scrollTenantLog();
-    }
-
-    if(MessageToVendor.trim().toLowerCase() !== '' || 'nothing.' || 'nothing' || undefined) {
-      const msg: BubbleMessage = { isFromAimee: true, message: MessageToVendor };
-      this.vendorMessages.update(messages => [...messages, msg]);
-      this.scrollVendorLog();
-    }
-
-    if(stepNumber === 3 && isCompleted) {
-      this.flowEngine.registerMessageFromAimee('Waiting for vendor to confirm visit with Tenant');
-      await this.registerAimeeLog();
-    } else if(stepNumber === 4 && isCompleted) {
-      this.flowEngine.registerMessageFromAimee('Waiting for vendor to confirm that the issue was fixed');
-      await this.registerAimeeLog();
-    } else if(stepNumber === 5 && isCompleted) {
-      this.flowEngine.registerMessageFromAimee('Waiting for tenant to confirm that the vendor fixed the issue');
-      await this.registerAimeeLog();
-    } else if(stepNumber === 6 && isCompleted) {
-      this.flowEngine.registerMessageFromAimee('Ticket completed');
-      await this.registerAimeeLog();
-    }
-    console.log(this.flowEngine);
-  }
-
-  private async registerAimeeLog() {
-    this.typingAimee.set(true);
-    await this.sleepBetweenSteps(this.sleepTime);
-    this.aimeeMessages.update(messages => [...messages, this.flowEngine.LastRegister])
-    this.typingAimee.set(false);
-    this.scrollAimeeLog();
   }
 
   private async selectVendor(category: string): Promise<void> {
@@ -468,34 +462,36 @@ stepNumber: 0,
     } else {
       vendor = filteredVendors[0];
     }
-    // const vendor = this.vendors.find(vendor => vendor.category.trim().toLowerCase() === category.trim().toLowerCase())
+
     if(vendor == null) {
       return;
     }
 
     this.selectedVendorName = vendor.contacts[0].name;
 
-    this.flowEngine.registerMessageFromAimee(`aimee: Selected vendor is ${vendor.contacts[0].name} from company ${vendor.companyName}`);
-    await this.registerAimeeLog();
-
-    const messageFromAimee = await this.chat.sendMessage({
-      message: `Message From Aimee: Vendor Name is ${vendor.contacts[0].name} from company ${vendor.companyName}`,
-    });
+    const message = `Message From Aimee: Vendor Name is ${vendor.contacts[0].name} from company ${vendor.companyName}`;
+    const messageFromAimee = await this.chat.sendMessage({ message });
 
     const aimeResponse = this.composable.convertToChatResponse(messageFromAimee);
     if(aimeResponse === null) {
       return;
     }
 
-    this.flowEngine.registerResponse(aimeResponse);
-    await this.registerAimeeLog();
-
     const { MessageToVendor, MessageToTenant } = aimeResponse;
+    const updateMessage = new MessageBuilder()
+      .createNewLogMessage()
+      .withTitle('Vendor selected')
+      .withDescription(`Vendor selected is ${vendor.contacts[0].name} from company ${vendor.companyName}`)
+      .withContent('Message to Vendor', MessageToVendor)
+      .getMessage() as IMessage;
+
+    this.messageLogs().addToAgent(updateMessage);
+
     if(MessageToTenant !== '') {
-      const msg: BubbleMessage = { isFromAimee: true, message: MessageToTenant };
       this.typingTenant.set(true);
       await this.sleepBetweenSteps(1500);
-      this.tenantMessages.update(messages => [...messages, msg])
+      const message = new MessageBuilder().createNewSimpleMessage(MessageToTenant).asReceiveMessage().getMessage() as ISimpleMessage;
+      this.messageLogs().addToTenant(message);
       this.typingTenant.set(false);
       this.scrollAimeeLog();
     }
@@ -503,8 +499,8 @@ stepNumber: 0,
     if(MessageToVendor !== '') {
       this.typingVendor.set(true);
       await this.sleepBetweenSteps(1500);
-      const msg: BubbleMessage = { isFromAimee: true, message: MessageToVendor };
-      this.vendorMessages.update(messages => [...messages, msg])
+      const message = new MessageBuilder().createNewSimpleMessage(MessageToVendor).asReceiveMessage().getMessage() as ISimpleMessage;
+      this.messageLogs().addToVendor(message);
       this.typingVendor.set(false);
       this.scrollAimeeLog();
     }
@@ -517,6 +513,26 @@ stepNumber: 0,
         resolve();
       }, ms);
     });
+  }
+
+  private async showMessageToTenant(message: string) {
+    if (message) {
+      this.typingTenant.set(true);
+      await this.sleepBetweenSteps(1500);
+      const simpleMessage: ISimpleMessage = new MessageBuilder().createNewSimpleMessage(message).asReceiveMessage().getMessage() as ISimpleMessage;
+      this.messageLogs().addToTenant(simpleMessage);
+      this.typingTenant.set(false);
+    }
+  }
+
+  private async showMessageToVendor(message: string) {
+    if (message) {
+      this.typingTenant.set(true);
+      await this.sleepBetweenSteps(1500);
+      const simpleMessage: ISimpleMessage = new MessageBuilder().createNewSimpleMessage(message).asReceiveMessage().getMessage() as ISimpleMessage;
+      this.messageLogs().addToVendor(simpleMessage);
+      this.typingTenant.set(false);
+    }
   }
 
   private scrollAimeeLog(): void {
@@ -540,15 +556,63 @@ stepNumber: 0,
     }
   }
 
-  isMessage(item: Message | ChatResponse | IssueResponse): item is Message {
-    return 'from' in item && 'message' in item;
+  private loadAllProperties(): void {
+    this.loginService
+      .allProperties()
+      .pipe(
+        takeUntilDestroyed(this.destroyedRef$),
+        map((result: Property2[]) => result.find(x => x.id === this.selectedUserId) || result[0]),
+        tap((propertyResult: Property2) => this.propertySelected = propertyResult)
+      )
+      .subscribe();
   }
 
-  isChatResponse(item: Message | ChatResponse | IssueResponse): item is ChatResponse {
-    return 'stepNumber' in item && 'isCompleted' in item;
+  private loadAllCategoriesSub(): Observable<string> {
+    return this.service
+      .getCategories()
+      .pipe(
+        takeUntilDestroyed(this.destroyedRef$),
+        map((categories: Category[]) => categories.map((category: Category) => category.name).join(', '))
+      );
   }
 
-  isIssueResponse(item: Message | ChatResponse | IssueResponse): item is IssueResponse {
-    return 'category' in item && 'tenant' in item;
+  private loadAllClausesSub(): Observable<string> {
+    return this.loginService
+      .allProperties()
+      .pipe(
+        takeUntilDestroyed(this.destroyedRef$),
+        map((result: Property2[]) => result.find(x => x.id === this.selectedUserId) || result[0]),
+        tap((propertyResult: Property2) => this.propertySelected = propertyResult),
+        map(property => property.leaseAgreementClauses),
+        map((clauses: LeaseAgreementClause[]) => {
+          let clausesSting = 'Clauses: \n';
+          clauses.forEach((clause: LeaseAgreementClause, index) => {
+            clausesSting += `\n\t${index+1}. ${clause.category} \n\t- ${clause.clause}`
+          });
+
+          if(clauses.length == 0) {
+            clausesSting += 'No clauses.';
+          }
+          return clausesSting;
+        })
+      );
+  }
+
+  private loadExampleIssues(): void {
+    this.service.getIssues()
+      .pipe(
+        takeUntilDestroyed(this.destroyedRef$)
+      ).subscribe((examples: Example[]) => {
+      this.examples = examples;
+      this.issueMessageControl.setValue(examples[0].issue);
+    });
+  }
+
+  private loadAllVendors(): void {
+    this.service
+      .getVendors()
+      .pipe(
+        takeUntilDestroyed(this.destroyedRef$)
+      ).subscribe((vendors: Vendor[]) => this.vendors = vendors);
   }
 }

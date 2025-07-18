@@ -2,13 +2,14 @@
   <mat-toolbar class="demo-header">
     <div class="flex justify-between w-full align-top">
       <img ngSrc="./assets/img/doorx.jpg" width="120" height="120" alt="">
-      <div class="inline pt-2">
-        <img ngSrc="./assets/img/gemini-color.svg" height="25" width="25" alt="gemini_image" class="float-left mr-2">
-        <div>Gemini version</div>
-      </div>
+<!--      <div class="inline pt-2">-->
+<!--        <img ngSrc="./assets/img/gemini-color.svg" height="25" width="25" alt="gemini_image" class="float-left mr-2">-->
+<!--        <div>Gemini version</div>-->
+<!--      </div>-->
       <button [routerLink]="'/login'">Sign out</button>
     </div>
   </mat-toolbar>
+
   <div class="demo-container-content">
     <!--  Chat tenant-->
     <div class="demo-phone">
@@ -50,19 +51,9 @@
       </div>
       <div class="messages">
         @for (message of tenantMessages(); track $index) {
-          @if (message.isFromAimee) {
-            <div class="bubble-message received">
-              <div class="bubble-message-content">
-                {{ message.message }}
-              </div>
-            </div>
-          } @else {
-            <div class="bubble-message sent">
-              <div class="bubble-message-content">
-                {{ message.message }}
-              </div>
-            </div>
-          }
+          <div class="bubble-message" [ngClass]="message.type === 'Sent' ? 'sent' : 'received'">
+            <div class="bubble-message-content"> {{ message.text }} </div>
+          </div>
         }
         @if(typingTenant()) {
           <typing-dots></typing-dots>
@@ -70,14 +61,18 @@
         <div id="targetTenant"></div>
       </div>
       <div class="demo-phone-input">
-        <textarea class="demo-phone-chat-input" type="text" [formControl]="tenantMessageControl" rows="3" (keydown.enter)="sendMessageFromTenant()"></textarea>
-        <button (click)="sendMessageFromTenant()">
+        <textarea class="demo-phone-chat-input" type="text" [formControl]="tenantMessageControl" rows="3" (keydown.enter)="processMessageFromTenant()"></textarea>
+        <button (click)="processMessageFromTenant()">
           <mat-icon class="text-green-600">send</mat-icon>
         </button>
       </div>
     </div>
 
+    <!--    Aimee console-->
+    <aime-console [messages]="agentMessage()" ></aime-console>
+
     <!--  Chat aimee-->
+    <!--
     <div class="demo-phone">
       <div class="demo-phone-status-bar">
         <div class="time">9:41</div>
@@ -183,6 +178,7 @@
         <div id="targetAime"></div>
       </div>
     </div>
+    -->
 
     <!--  Chat vendor-->
     <div class="demo-phone">
@@ -203,19 +199,9 @@
       </header>
       <div class="messages">
         @for (message of vendorMessages(); track $index) {
-          @if (message.isFromAimee) {
-            <div class="bubble-message received">
-              <div class="bubble-message-content">
-                {{ message.message }}
-              </div>
-            </div>
-          } @else {
-            <div class="bubble-message sent">
-              <div class="bubble-message-content">
-                {{ message.message }}
-              </div>
-            </div>
-          }
+          <div class="bubble-message" [ngClass]="message.type == 'Sent' ? 'sent' : 'received'">
+            <div class="bubble-message-content"> {{ message.text }} </div>
+          </div>
         }
         @if(typingVendor()) {
           <typing-dots></typing-dots>
@@ -223,8 +209,8 @@
         <div id="targetVendor"></div>
       </div>
       <div class="demo-phone-input">
-        <textarea class="demo-phone-chat-input" [formControl]="vendorMessageControl" (keydown.enter)="sendMessageFromVendor()"></textarea>
-        <button (click)="sendMessageFromVendor()">
+        <textarea class="demo-phone-chat-input" [formControl]="vendorMessageControl" (keydown.enter)="processMessageFromVendor()"></textarea>
+        <button (click)="processMessageFromVendor()">
           <mat-icon class="text-blue-600">send</mat-icon>
         </button>
       </div>

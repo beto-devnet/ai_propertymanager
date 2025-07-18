@@ -1,0 +1,100 @@
+<div class="aime-console">
+  <header class="header-section">
+    <div class="header-log">
+      <img ngSrc="assets/img/ai-propertymanager.png" width="40" height="40" alt="icon">
+      <div>Events Log</div>
+    </div>
+    <div class="header-ticket">
+      <mat-icon>receipt</mat-icon>
+      <div>Ticker ID: 7845968</div>
+    </div>
+  </header>
+
+
+  <div class="main-section">
+    @for (message of messages(); track $index) {
+      <div class="main-section-message">
+        <header class="header">
+          <section class="title">{{ message.title }}</section>
+          <section class="date">{{ message.date | date }}</section>
+        </header>
+
+        <div class="message-content">
+          @if (message.description) {
+            <p class="description">{{ message.description }}</p>
+          }
+          @for (contentItem of message.messageContent; track $index) {
+            <section class="message-content-item" [class.content-inline]="message.title.toLowerCase() == 'issue request'">
+              <label> {{ contentItem.name }} </label>
+              <p> {{ contentItem.text }} </p>
+            </section>
+          }
+        </div>
+      </div>
+    }
+
+    @if(typing()) {
+      <typing-dots></typing-dots>
+    }
+
+
+<!--    <div class="main-section-message">-->
+<!--      <header class="header">-->
+<!--        <section class="title">Issue Request</section>-->
+<!--        <section class="date">Jun-11-25 11:10 AM</section>-->
+<!--      </header>-->
+<!--      <div class="message-content">-->
+<!--        <section class="message-content-item content-inline">-->
+<!--          <label>Item 1</label>-->
+<!--          <p>Description larga de lo que peude lelgar a a ser una respuesta larga por parte del agente de IA</p>-->
+<!--        </section>-->
+
+<!--        <section class="message-content-item">-->
+<!--          <label>Item 2</label>-->
+<!--          <p>Description</p>-->
+<!--        </section>-->
+
+<!--        <section class="message-content-item">-->
+<!--          <label>Item 3</label>-->
+<!--          <p>Description</p>-->
+<!--        </section>-->
+<!--      </div>-->
+<!--    </div>-->
+
+<!--    <div class="main-section-message">-->
+<!--      <header class="header">-->
+<!--        <section class="title">Message From Tenant/Vendor</section>-->
+<!--        <section class="date">Jun-11-25 11:10 AM</section>-->
+<!--      </header>-->
+<!--      <div class="message-content">-->
+<!--        <section class="message-content-item content-inline">-->
+<!--          &lt;!&ndash;              <label>Message</label>&ndash;&gt;-->
+<!--          <p>Esta madre</p>-->
+<!--        </section>-->
+<!--      </div>-->
+<!--    </div>-->
+
+<!--    <div class="main-section-message">-->
+<!--      <header class="header">-->
+<!--        <section class="title">Message Log Item</section>-->
+<!--        <section class="date">Jun-11-25 11:10 AM</section>-->
+<!--      </header>-->
+<!--      <div class="message-content">-->
+<!--        <section class="message-content-item">-->
+<!--          <label>Item</label>-->
+<!--          <p>Esta madre</p>-->
+<!--        </section>-->
+
+<!--        <section class="message-content-item">-->
+<!--          <label>Response</label>-->
+<!--          <p>Esta otra madre</p>-->
+<!--        </section>-->
+
+<!--        <section class="message-content-item">-->
+<!--          <label>Next Step</label>-->
+<!--          <p>Waiting</p>-->
+<!--        </section>-->
+<!--      </div>-->
+<!--    </div>-->
+  </div>
+</div>
