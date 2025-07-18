@@ -62,8 +62,8 @@
         </div>
       </div>
       <div class="demo-phone-input">
-        <textarea class="demo-phone-chat-input" type="text" [formControl]="tenantMessageControl" rows="3" (keydown.enter)="processMessageFromTenant()"></textarea>
-        <button (click)="processMessageFromTenant()">
+        <textarea class="demo-phone-chat-input" type="text" [formControl]="tenantMessageControl" rows="3" (keydown.enter)="processMessageFromTenant($event)"></textarea>
+        <button (click)="processMessageFromTenant($event)">
           <mat-icon class="text-green-600">send</mat-icon>
         </button>
       </div>
@@ -102,8 +102,8 @@
         </div>
       </div>
       <div class="demo-phone-input">
-        <textarea class="demo-phone-chat-input" [formControl]="vendorMessageControl" (keydown.enter)="processMessageFromVendor()"></textarea>
-        <button (click)="processMessageFromVendor()">
+        <textarea class="demo-phone-chat-input" [formControl]="vendorMessageControl" (keydown.enter)="processMessageFromVendor($event)"></textarea>
+        <button (click)="processMessageFromVendor($event)">
           <mat-icon class="text-blue-600">send</mat-icon>
         </button>
       </div>

@@ -365,7 +365,10 @@ stepNumber: 0,
     this.blockButton.set(false);
   }
 
-  async processMessageFromTenant(): Promise<void> {
+  async processMessageFromTenant($event: any): Promise<void> {
+    if ($event.keyCode === 13) {
+      $event.preventDefault();
+    }
     const message = this.tenantMessageControl.value
     if (!message) {
       return;
@@ -418,7 +421,11 @@ stepNumber: 0,
     }
   }
 
-  async processMessageFromVendor(): Promise<void> {
+  async processMessageFromVendor($event: any): Promise<void> {
+    if ($event.keyCode === 13) {
+      $event.preventDefault();
+    }
+
     const message = this.vendorMessageControl.value
     if (!message) {
       return;
