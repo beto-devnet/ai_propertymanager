@@ -50,158 +50,25 @@
       </div>
       <div class="messages">
         @for (message of tenantMessages(); track $index) {
-          @if (message.isFromAimee) {
-            <div class="bubble-message received">
-              <div class="bubble-message-content">
-                {{ message.message }}
-              </div>
-            </div>
-          } @else {
-            <div class="bubble-message sent">
-              <div class="bubble-message-content">
-                {{ message.message }}
-              </div>
-            </div>
+          <div class="bubble-message" [ngClass]="message.type === 'Sent' ? 'sent' : 'received'">
+            <div class="bubble-message-content"> {{ message.text }} </div>
+          </div>
+        }
+        <div #scrollToTenant>
+          @if(typingTenant()) {
+            <typing-dots></typing-dots>
           }
-        }
-        @if(typingTenant()) {
-          <typing-dots></typing-dots>
-        }
-        <div id="targetTenant"></div>
+        </div>
       </div>
       <div class="demo-phone-input">
-        <textarea class="demo-phone-chat-input" type="text" [formControl]="tenantMessageControl" rows="3" (keydown.enter)="processMessageFromTenant()"></textarea>
-        <button (click)="processMessageFromTenant()">
+        <textarea class="demo-phone-chat-input" type="text" [formControl]="tenantMessageControl" rows="3" (keydown.enter)="processMessageFromTenant($event)"></textarea>
+        <button (click)="processMessageFromTenant($event)">
           <mat-icon class="text-green-600">send</mat-icon>
         </button>
       </div>
     </div>
 
-    <!--  Chat aimee-->
-    <div class="demo-phone">
-      <div class="demo-phone-status-bar">
-        <div class="time">9:41</div>
-        <div class="black-notch">.</div>
-        <div class="battery-status">
-          <span>100%</span>
-          <div class="battery-icon">
-            <div class="battery-fill"></div>
-          </div>
-        </div>
-      </div>
-      <header>
-        <div>
-          <img width="60" height="60" fetchpriority="high" alt="" ngSrc="/assets/img/doorx.jpg">
-        </div>
-        <div>Aimee Jones</div>
-        <div>
-          <img ngSrc="./assets/img/AmieeJones.png" width="40" alt="" height="49">
-        </div>
-      </header>
-      <div class="messages">
-        @for (logItem of aimeeMessages(); track $index) {
-          <div class="message-item">
-            <div class="message-item-content">
-              @if (isIssueResponse(logItem)) {
-                <div class="font-semibold text-xl mb-2">Issue request</div>
-                <section class="mb-2">
-                  {{ logItem.message }}
-                </section>
-                <div>
-                  <div class="flex flex-1 gap-3">
-                    <label class="font-black">Tenant</label>
-                    <p>{{ logItem.tenant }}</p>
-                  </div>
-                  <div class="flex flex-1 gap-3">
-                    <label class="font-black">Address</label>
-                    <p>{{ logItem.address }}</p>
-                  </div>
-                  <div class="flex flex-1 gap-3">
-                    <label class="font-black">Telephone</label>
-                    <p>{{ logItem.phone }}</p>
-                  </div>
-                  <div class="flex flex-1 gap-3">
-                    <label class="font-black">Category</label>
-                    <p>{{ logItem.category }}</p>
-                  </div>
-                </div>
-              } @else if (isGptMessage(logItem)) {
-                <div>
-                  <div class="flex justify-between">
-                    <div class="font-black mb-3">Step</div>
-                    <mat-icon fontSet="material-symbols-outlined" class="text-blue-500">neurology</mat-icon>
-                  </div>
-                  <div class="flex flex-col mb-2">
-                    <label class="font-black mb-1">Message.</label>
-                    <p>{{ logItem.text }}</p>
-                  </div>
-                  <div class="flex flex-col mb-2">
-                    <label class="font-black mb-1">Response.</label>
-                    <p>{{ logItem.response.recommendedSolution }}</p>
-                  </div>
-                  <div class="flex flex-col mb-2">
-                    <label class="font-black mb-1">Next step.</label>
-                    <p>{{ logItem.response.nextStep.context }}</p>
-                  </div>
-                </div>
-              }
-              @else if (isChatResponse(logItem)) {
-                <div>
-                  <div class="flex justify-between">
-                    <div class="font-black mb-3">Step {{ logItem.stepName }}</div>
-                    <mat-icon fontSet="material-symbols-outlined" class="text-blue-500">neurology</mat-icon>
-                  </div>
-                  @if (logItem.MessageToTenant) {
-                    <div class="flex flex-col mb-2">
-                      <label class="font-black mb-1">Response to Tenant.</label>
-                      <p>{{ logItem.MessageToTenant }}</p>
-                    </div>
-                  }
-                  @if (logItem.MessageToVendor) {
-                    <div class="flex flex-col mb-2">
-                      <label class="font-black mb-1">Response to Vendor.</label>
-                      <p>{{ logItem.MessageToVendor }}</p>
-                    </div>
-                  }
-                  <div class="flex flex-row">
-                    <label class="flex flex-1 font-black">Completed</label>
-                    @if (logItem.isCompleted) {
-                      <mat-icon class="text-green-600">check</mat-icon>
-                    } @else {
-                      <mat-icon class="text-red-500">close</mat-icon>
-                    }
-                  </div>
-                </div>
-              }
-              @else if(isMessage(logItem)) {
-                <div class="flex flex-col">
-                  <div class="flex flex-row justify-between">
-                    @if(logItem.message == 'Ticket completed') {
-                      <div class="text-xl">Ticket Completed</div>
-                      <mat-icon class="text-green-600">done_all</mat-icon>
-                    }
-                    @else if(logItem.message.startsWith('Waiting')) {
-                      <label class="flex flex-1 font-black mb-3">Message from {{ logItem.from }}</label>
-                      <mat-icon class="text-purple-600">schedule</mat-icon>
-                    }
-                    @else {
-                      <label class="flex flex-1 font-black mb-3">Message from {{ logItem.from }}</label>
-                      <mat-icon class="text-blue-500">chat_bubble</mat-icon>
-                    }
-                  </div>
-                  <p>{{ logItem.message }}</p>
-                </div>
-              }
-            </div>
-          </div>
-
-        }
-        @if(typingAimee()) {
-          <typing-dots></typing-dots>
-        }
-        <div id="targetAime"></div>
-      </div>
-    </div>
+    <aime-console [messages]="agentMessage()"></aime-console>
 
     <!--  Chat vendor-->
     <div class="demo-phone">
@@ -222,28 +89,19 @@
       </header>
       <div class="messages">
         @for (message of vendorMessages(); track $index) {
-          @if (message.isFromAimee) {
-            <div class="bubble-message received">
-              <div class="bubble-message-content">
-                {{ message.message }}
-              </div>
-            </div>
-          } @else {
-            <div class="bubble-message sent">
-              <div class="bubble-message-content">
-                {{ message.message }}
-              </div>
-            </div>
+          <div class="bubble-message" [ngClass]="message.type == 'Sent' ? 'sent' : 'received'">
+            <div class="bubble-message-content"> {{ message.text }} </div>
+          </div>
+        }
+        <div #scrollToVendor>
+          @if(typingVendor()) {
+            <typing-dots></typing-dots>
           }
-        }
-        @if(typingVendor()) {
-          <typing-dots></typing-dots>
-        }
-        <div id="targetVendor"></div>
+        </div>
       </div>
       <div class="demo-phone-input">
-        <textarea class="demo-phone-chat-input" [formControl]="vendorMessageControl" (keydown.enter)="processMessageFromVendor()"></textarea>
-        <button (click)="processMessageFromVendor()">
+        <textarea class="demo-phone-chat-input" [formControl]="vendorMessageControl" (keydown.enter)="processMessageFromVendor($event)"></textarea>
+        <button (click)="processMessageFromVendor($event)">
           <mat-icon class="text-blue-600">send</mat-icon>
         </button>
       </div>

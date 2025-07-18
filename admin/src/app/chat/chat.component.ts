@@ -341,21 +341,8 @@ stepNumber: 0,
 
     this.messagesLogUI().addToAgent(this.messageEngine.lastMessage);
 
-    if(MessageToTenant !== '' && MessageToTenant !== undefined) {
-      this.typingTenant.set(true);
-      await this.sleepBetweenSteps(1500);
-      const messageToTenant: ISimpleMessage = new MessageBuilder().createNewSimpleMessage(MessageToTenant!).asReceiveMessage().getMessage() as ISimpleMessage;
-      this.messagesLogUI().addToTenant(messageToTenant);
-      this.typingTenant.set(false);
-    }
-
-    if(MessageToVendor !== '' && MessageToVendor !== undefined) {
-      this.typingVendor.set(true);
-      await this.sleepBetweenSteps(1500);
-      const messageToVendor: ISimpleMessage = new MessageBuilder().createNewSimpleMessage(MessageToVendor!).asReceiveMessage().getMessage() as ISimpleMessage;
-      this.messagesLogUI().addToVendor(messageToVendor);
-      this.typingVendor.set(false);
-    }
+    await this.showMessageToTenant(MessageToTenant);
+    await this.showMessageToVendor(MessageToVendor);
 
     if(chatResponse.stepNumber === 1 && chatResponse.isCompleted && chatResponse.resolutionResponsibility !== 'Tenant') {
       const category = chatResponse.Category ?? 'general';

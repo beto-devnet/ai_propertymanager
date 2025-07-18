@@ -1,26 +1,22 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { Chat, GoogleGenAI } from '@google/genai';
+import { Component, DestroyRef, inject, OnInit, AfterViewChecked, signal, ViewChild, ElementRef } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Category } from './models/Category';
 import { Vendor } from './models/Vendor';
-import { lastValueFrom, map, tap, withLatestFrom } from 'rxjs';
-import { Property2, LeaseAgreementClause } from '../login/models';
+import { lastValueFrom, map, tap } from 'rxjs';
+import { Property2 } from '../login/models';
 import { LoginService } from '../login/login.service';
 import { MatIcon } from '@angular/material/icon';
 import { MatRipple } from '@angular/material/core';
-import { BubbleMessage, Message } from './models/Message';
-import { NgOptimizedImage } from '@angular/common';
+import { NgClass, NgOptimizedImage } from '@angular/common';
 import { TypingDotsComponent } from '../shared/components/typing-dots/typing-dots.component';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { Example } from './models/Example';
 import { MatToolbar } from '@angular/material/toolbar';
 import { ChatGptService } from './chat-gpt.service';
-import { ChatOrchestrator } from './ChatOrchestrator';
-import { GptMessage } from './models/GptMessage';
-import { ChatResponse } from './models/response';
-import { IssueResponse } from './models/IssueResponse';
+import { AimeConsoleComponent } from '../shared/components/aime-console/aime-console.component';
+import { IMessage, ISimpleMessage, MessageEngine } from '../shared/Engine/MessageEngine';
+import { MessageBuilder } from '../shared/Engine/MessageBuider';
 
 @Component({
   selector: 'app-gpt',
@@ -32,12 +28,14 @@ import { IssueResponse } from './models/IssueResponse';
     NgOptimizedImage,
     ReactiveFormsModule,
     TypingDotsComponent,
-    RouterLink
+    RouterLink,
+    AimeConsoleComponent,
+    NgClass
   ],
   templateUrl: './gpt.component.html',
   styleUrl: './gpt.component.css'
 })
-export default class GptComponent implements OnInit {
+export default class GptComponent implements OnInit, AfterViewChecked {
 
   private activatedRoute = inject(ActivatedRoute);
   private chatGptService: ChatGptService = inject(ChatGptService);
@@ -46,10 +44,10 @@ export default class GptComponent implements OnInit {
   examples: Example[] = [];
   categoryNameSelected: string = '';
   selectedVendorName = '';
-  selectedVendor!: Vendor;
+  // selectedVendor!: Vendor;
   vendors: Vendor[] = [];
   private threadId = '';
-  ticketClosed = false;
+  // ticketClosed = false;
   propertySelected: Property2 = { id: 0, address: '', tenant: { name: '', telephone: '' }, landlord: '', leaseAgreementClauses: [] };
   private selectedUserId: number = 0;
 
@@ -57,21 +55,22 @@ export default class GptComponent implements OnInit {
   tenantMessageControl: FormControl = new FormControl<string>('');
   vendorMessageControl: FormControl = new FormControl<string>('');
 
-  tenantMessages = signal<BubbleMessage[]>([]);
-  vendorMessages = signal<BubbleMessage[]>([]);
-  aimeeMessages = signal<Array<ChatResponse|Message|IssueResponse|GptMessage>>([]);
+  tenantMessages = signal<ISimpleMessage[]>([]);
+  vendorMessages = signal<ISimpleMessage[]>([]);
+  agentMessage = signal<IMessage[]>([]);
 
-  typingAimee = signal<boolean>(false);
   typingVendor = signal<boolean>(false);
   typingTenant = signal<boolean>(false);
   blockButton = signal<boolean>(false);
-  private sleepTime = 2000;
+  @ViewChild('scrollToTenant') private scrollTenant!: ElementRef;
+  @ViewChild('scrollToVendor') private scrollVendor!: ElementRef;
 
 
-  ///------------
-  private chatOrchestrator: ChatOrchestrator;
+  private readonly messageEngine: MessageEngine;
+
+
   constructor() {
-    this.chatOrchestrator = new ChatOrchestrator();
+    this.messageEngine = new MessageEngine();
   }
 
   ngOnInit(): void {
@@ -81,9 +80,43 @@ export default class GptComponent implements OnInit {
     this.loadAllVendors()
   }
 
+  ngAfterViewChecked() {
+    try {
+      this.scrollVendor.nativeElement.scrollIntoView({ behavior: 'smooth' });
+      this.scrollTenant.nativeElement.scrollIntoView({ behavior: 'smooth' });
+    } catch (err) { }
+  }
+
   handlePageEvent(event$: PageEvent): void {
     const index = event$.pageIndex;
     this.issueMessageControl.setValue(this.examples[index].issue);
+  }
+
+  private messagesLogUI = () => {
+    const addToAgent = (message: IMessage): void=> {
+      this.agentMessage.update(messages =>  [...messages, message]);
+    }
+
+    const addToTenant = (message: ISimpleMessage): void=> {
+      this.tenantMessages.update(messages =>  [...messages, message]);
+    }
+
+    const addToVendor = (message: ISimpleMessage): void=> {
+      this.vendorMessages.update(messages =>  [...messages, message]);
+    }
+
+    const resetAll = () => {
+      this.agentMessage.set([]);
+      this.vendorMessages.set([]);
+      this.tenantMessages.set([]);
+    }
+
+    return {
+      addToAgent,
+      addToTenant,
+      addToVendor,
+      resetAll
+    }
   }
 
   async processIssue(): Promise<void> {
@@ -98,10 +131,9 @@ export default class GptComponent implements OnInit {
     const { tenant } = this.propertySelected;
 
 
-    if(!this.chatOrchestrator.IsEmpty) {
-      this.tenantMessages.set([]);
-      this.vendorMessages.set([]);
-      this.aimeeMessages.set([]);
+    if(!this.messageEngine.isEmpty()) {
+      this.messagesLogUI().resetAll();
+      this.messageEngine.reset();
     }
 
     this.blockButton.set(true);
@@ -109,41 +141,41 @@ export default class GptComponent implements OnInit {
 
     const issueMessageResponse = await lastValueFrom(this.chatGptService.processTenantIssue({ tenantName: tenant.name, issueDescription: issue, threadId: this.threadId }));
 
-    this.categoryNameSelected = issueMessageResponse.category != 'Unclassified' ? issueMessageResponse.category : 'general';
-    this.chatOrchestrator.registerMessage({ text: issue, response: issueMessageResponse });
+    const { category, recommendedSolution, nextStep } = issueMessageResponse;
+    const { name , telephone } = this.propertySelected.tenant;
+    const { address } = this.propertySelected;
+    this.categoryNameSelected = category != 'Unclassified' ? category : 'general';
 
-    const issueMessage: IssueResponse = {
-      message: issue,
-      tenant: this.propertySelected.tenant.name,
-      address: this.propertySelected.address,
-      phone: this.propertySelected.tenant.telephone,
-      category: this.categoryNameSelected,
-    };
-    await this.registerAimeeLog(issueMessage);
+    const issueMessage = new MessageBuilder()
+      .createNewLogMessage()
+      .withTitle('Issue Request')
+      .withContent('Category', category)
+      .withContent('Resident', name)
+      .withContent('Address', address)
+      .withContent('Phone', telephone)
+      .withContent('Issue', issue)
+      .withContent('Reply to Tenant', recommendedSolution)
+      .withContent('Next Step', nextStep.context)
+      .getMessage() as IMessage;
+    this.messageEngine.addMessage(issueMessage);
+    this.messagesLogUI().addToAgent(this.messageEngine.lastMessage);
 
-    if (issueMessageResponse.recommendedSolution !== '' || undefined) {
-      await this.sendMessageToTenant(issueMessageResponse.recommendedSolution);
+    if (recommendedSolution) {
+      await this.replyToActor('tenant', issueMessageResponse.recommendedSolution);
     }
 
-    const findVendorMessage: Message = { from: 'Aimee', message: issueMessageResponse.nextStep.context };
-    await this.registerAimeeLog(findVendorMessage);
-
     if (!issueMessageResponse.nextStep.insufficientInformation && (issueMessageResponse.nextStep.instruction === 'SendSMS' || issueMessageResponse.nextStep.instruction === 'replyToTicket')) {
-      this.selectedVendor = this.selectVendor(this.categoryNameSelected);
-      this.selectedVendorName = this.selectedVendor.contacts[0].name;
-      const messageToVendor = `Hi ${this.selectedVendorName}, this is Aimee from Milla Realty. We have an ${this.categoryNameSelected} issue at ${this.propertySelected.address}
-      (tenant: ${this.propertySelected.tenant.name} - ${this.propertySelected.tenant.telephone}).
-
-      The issue description is: ${issue}.
-
-      Can you take this job and contact the tenant directly to schedule a time that works for both of you? Please reply to confirm you are available.`;
-      await this.sendMessageToVendor(messageToVendor);
+      await this.selectVendor(this.categoryNameSelected, issue);
     }
 
     this.blockButton.set(false);
   }
 
-  async processMessageFromTenant(): Promise<void> {
+  async processMessageFromTenant($event: any): Promise<void> {
+    if ($event.keyCode === 13) {
+      $event.preventDefault();
+    }
+
     const message = this.tenantMessageControl.value
     if (!message) {
       return;
@@ -151,51 +183,46 @@ export default class GptComponent implements OnInit {
 
     this.tenantMessageControl.reset();
 
-    const msg: BubbleMessage = { isFromAimee: false, message: message };
-    this.tenantMessages.update(messages => [...messages, msg]);
-    this.scrollTenantLog();
+    const chatMessage = new MessageBuilder()
+      .createNewSimpleMessage(message)
+      .asSentMessage()
+      .getMessage() as ISimpleMessage;
+    this.messagesLogUI().addToTenant(chatMessage);
 
-    this.typingAimee.set(true);
-
+    this.typingTenant.set(true);
     const messageResult = await lastValueFrom(this.chatGptService.processTenantMessage({ message: message,  threadId: this.threadId }));
-    this.chatOrchestrator.registerMessage({ text: message, response: messageResult });
-    await this.registerAimeeLog(this.chatOrchestrator.GetLastMessage);
+    this.typingTenant.set(false);
 
-    if(messageResult.nextStep.responseToActor) {
-      if (messageResult.nextStep.actor.toLowerCase() === 'vendor') {
-        await this.sendMessageToVendor(messageResult.nextStep.responseToActor);
-      } else if (messageResult.nextStep.actor.toLowerCase() === 'tenant') {
-        await this.sendMessageToTenant(messageResult.nextStep.responseToActor);
-      }
-    }
+    const { actor, context, responseToActor, instruction } = messageResult.nextStep;
+    const messageResultBuilder = new MessageBuilder()
+      .createNewLogMessage()
+      .withTitle('Message from tenant')
+      .withContent('Message', message)
+      .withContent(`Reply to ${actor.toLowerCase()}`, responseToActor)
+      .withContent('Next step', context)
+      .getMessage() as IMessage;
+    this.messageEngine.addMessage(messageResultBuilder);
+    this.messagesLogUI().addToAgent(messageResultBuilder);
+
+    await this.replyToActor(actor, responseToActor);
 
     if (messageResult.nextStep.instruction === 'CloseTicket') {
-      const aimeeMessage = 'Before closing a ticket ask for feedback and a star rating of 1 through 5';
-      const feedBackMessage: BubbleMessage = { isFromAimee: false, message: aimeeMessage };
-      this.tenantMessages.update(messages => [...messages, feedBackMessage]);
-      this.scrollTenantLog();
-      this.ticketClosed = true;
+      const finishedMessage = new MessageBuilder()
+        .createNewLogMessage()
+        .withTitle('Ticket Completed')
+        .withDescription('The ticket has been completed successfully')
+        .getMessage() as IMessage;
+
+      this.messagesLogUI().addToAgent(finishedMessage);
+      this.messageEngine.addMessage(finishedMessage);
     }
-
-
-    // if (messageResult.nextStep.instruction === 'replyToVendor') {
-    //   await this.sendMessageToVendor(messageResult.recommendedSolution);
-    // } else if (messageResult.nextStep.instruction === 'replyToTenant' || messageResult.nextStep.instruction === 'replyToTicket') {
-    //   await this.sendMessageToTenant(messageResult.recommendedSolution);
-    // } else if (messageResult.nextStep.instruction === 'CloseTicket') {
-    //   await this.sendMessageToTenant(messageResult.recommendedSolution);
-    //
-    //   if(!this.ticketClosed) {
-    //     const aimeeMessage = 'Before closing a ticket ask for feedback and a star rating of 1 through 5';
-    //     const feedBackMessage: BubbleMessage = { isFromAimee: false, message: aimeeMessage };
-    //     this.tenantMessages.update(messages => [...messages, feedBackMessage]);
-    //     this.scrollTenantLog();
-    //     this.ticketClosed = true;
-    //   }
-    // }
   }
 
-  async processMessageFromVendor(): Promise<void> {
+  async processMessageFromVendor($event: any): Promise<void> {
+    if ($event.keyCode === 13) {
+      $event.preventDefault();
+    }
+
     const message = this.vendorMessageControl.value
     if (!message) {
       return;
@@ -203,64 +230,83 @@ export default class GptComponent implements OnInit {
 
     this.vendorMessageControl.reset();
 
-    const msg: BubbleMessage = { isFromAimee: false, message: message };
-    this.vendorMessages.update(messages => [...messages, msg]);
-    this.scrollVendorLog();
+    const vendorMessage = new MessageBuilder().createNewSimpleMessage(message).asSentMessage().getMessage() as ISimpleMessage;
+    this.messagesLogUI().addToVendor(vendorMessage);
 
+    this.typingVendor.set(true);
     const messageResult = await lastValueFrom(this.chatGptService.processVendorMessage({ message: message, threadId: this.threadId }));
+    this.typingVendor.set(false);
 
-    this.chatOrchestrator.registerMessage({ text: message, response: messageResult });
-    await this.registerAimeeLog(this.chatOrchestrator.GetLastMessage);
+    const { recommendedSolution } = messageResult;
+    const { actor, responseToActor, context, insufficientInformation } = messageResult.nextStep;
+    const logChatBuilder = new MessageBuilder()
+      .createNewLogMessage()
+      .withTitle('Message from Vendor')
+      .withContent('Message', message)
+      .withContent(`Reply to ${actor.toLowerCase()}`, responseToActor)
 
-    if(messageResult.nextStep.responseToActor) {
-      if (messageResult.nextStep.actor.toLowerCase() === 'vendor') {
-        await this.sendMessageToVendor(messageResult.nextStep.responseToActor);
-      } else if (messageResult.nextStep.actor.toLowerCase() === 'tenant') {
-        await this.sendMessageToTenant(messageResult.nextStep.responseToActor);
-      }
+    if (recommendedSolution) {
+      logChatBuilder.withContent('Reply To tenant', recommendedSolution);
+    }
+    logChatBuilder.withContent('Next step', context);
+
+    const logChat = logChatBuilder.getMessage() as IMessage;
+    this.messageEngine.addMessage(logChat);
+    this.messagesLogUI().addToAgent(logChat);
+    await this.replyToActor(actor, responseToActor);
+    await this.replyToActor('tenant', recommendedSolution);
+  }
+
+  private async replyToActor(actor: string, message: string) {
+    if(!message) {
+      return;
     }
 
-    // if (messageResult.nextStep.instruction === 'replyToTenant' || messageResult.nextStep.instruction === 'Wait' || messageResult.nextStep.instruction === 'replyToTicket') {
-    //   await this.sendMessageToTenant(messageResult.recommendedSolution);
-    // } else if (messageResult.nextStep.instruction === 'replyToVendor') {
-    //   await this.sendMessageToVendor(messageResult.recommendedSolution);
-    // } else if (messageResult.nextStep.instruction === 'CloseTicket') {
-    //   await this.sendMessageToTenant(messageResult.recommendedSolution);
-    // }
+    const messageReplyToActor = new MessageBuilder()
+      .createNewSimpleMessage(message)
+      .asReceiveMessage()
+      .getMessage() as ISimpleMessage;
+
+    if(actor.trim().toLowerCase() === 'tenant') {
+      this.typingTenant.set(true);
+      await this.sleepBetweenSteps(1500);
+      this.messagesLogUI().addToTenant(messageReplyToActor);
+      this.typingTenant.set(false);
+    } else if (actor.trim().toLowerCase() === 'vendor') {
+      this.typingVendor.set(true);
+      await this.sleepBetweenSteps(1500);
+      this.messagesLogUI().addToVendor(messageReplyToActor);
+      this.typingVendor.set(false);
+    }
   }
 
-  private async registerAimeeLog(message: ChatResponse | Message | IssueResponse | GptMessage) {
-    this.typingAimee.set(true);
-    await this.sleepBetweenSteps(this.sleepTime);
-    this.aimeeMessages.update(messages => [...messages, message]);
-    this.typingAimee.set(false);
-    this.scrollAimeeLog();
-  }
-
-  private async sendMessageToTenant(message: string) {
-    this.typingTenant.set(true);
-    await this.sleepBetweenSteps(1500);
-    const msg: BubbleMessage = { isFromAimee: true, message: message };
-    this.tenantMessages.update(messages => [...messages, msg])
-    this.typingTenant.set(false);
-  }
-
-  private async sendMessageToVendor(message: string) {
-    this.typingVendor.set(true);
-    await this.sleepBetweenSteps(1500);
-    const msg: BubbleMessage = { isFromAimee: true, message: message };
-    this.vendorMessages.update(messages => [...messages, msg]);
-    this.typingVendor.set(false);
-  }
-
-  private selectVendor(category: string): Vendor {
+  private async selectVendor(category: string, issue: string): Promise<void> {
+    let vendor: Vendor;
     const filteredVendors = this.vendors.filter(vendor => vendor.category.trim().toLowerCase() === category.trim().toLowerCase());
     if(filteredVendors.length > 1) {
       const randomIndex = Math.floor(Math.random() * filteredVendors.length);
-      return filteredVendors[randomIndex];
+      vendor = filteredVendors[randomIndex];
     } else {
-      return filteredVendors[0];
+      vendor = filteredVendors[0];
     }
+
+    this.selectedVendorName = vendor.contacts[0].name;
+
+    const messageToVendor = `Hi ${this.selectedVendorName}, this is Aimee from Milla Realty. We have an ${this.categoryNameSelected} issue at ${this.propertySelected.address}
+      (tenant: ${this.propertySelected.tenant.name} - ${this.propertySelected.tenant.telephone}).
+
+      The issue description is: ${issue}.
+
+      Can you take this job and contact the tenant directly to schedule a time that works for both of you? Please reply to confirm you are available.`;
+
+    const findVendorMessage = new MessageBuilder()
+      .createNewLogMessage()
+      .withTitle('Message For Selected Vendor')
+      .withDescription(`Vendor selected is ${vendor.contacts[0].name} from company ${vendor.companyName}`)
+      .withContent('Message', messageToVendor)
+      .getMessage() as IMessage;
+    this.messagesLogUI().addToAgent(findVendorMessage);
+    await this.replyToActor('vendor', messageToVendor);
   }
 
   async sleepBetweenSteps(ms: number = 3000): Promise<void> {
@@ -269,27 +315,6 @@ export default class GptComponent implements OnInit {
         resolve();
       }, ms);
     });
-  }
-
-  private scrollAimeeLog(): void {
-    const el: HTMLElement | null = document.getElementById('targetAime');
-    if(el !== null) {
-      el.scrollIntoView({behavior: 'smooth'});
-    }
-  }
-
-  private scrollVendorLog(): void {
-    const el: HTMLElement | null = document.getElementById('targetVendor');
-    if(el !== null) {
-      el.scrollIntoView({behavior: 'smooth'});
-    }
-  }
-
-  private scrollTenantLog(): void {
-    const el: HTMLElement | null = document.getElementById('targetTenant');
-    if(el !== null) {
-      el.scrollIntoView({behavior: 'smooth'});
-    }
   }
 
   private loadAllProperties(): void {
@@ -319,21 +344,5 @@ export default class GptComponent implements OnInit {
       .pipe(
         takeUntilDestroyed(this.destroyedRef$)
       ).subscribe((vendors: Vendor[]) => this.vendors = vendors);
-  }
-
-  isMessage(item: Message | ChatResponse | IssueResponse | GptMessage): item is Message {
-    return 'from' in item && 'message' in item;
-  }
-
-  isChatResponse(item: Message | ChatResponse | IssueResponse | GptMessage): item is ChatResponse {
-    return 'stepNumber' in item && 'isCompleted' in item;
-  }
-
-  isIssueResponse(item: Message | ChatResponse | IssueResponse | GptMessage): item is IssueResponse {
-    return 'category' in item && 'tenant' in item;
-  }
-
-  isGptMessage(item: Message | ChatResponse | IssueResponse | GptMessage): item is GptMessage {
-    return 'text' in item && 'response' in item;
   }
 }

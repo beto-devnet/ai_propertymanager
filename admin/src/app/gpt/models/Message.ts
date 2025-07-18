@@ -5,7 +5,7 @@ export interface Message {
   message: string;
 }
 
-export interface BubbleMessage {
-  isFromAimee: boolean;
-  message: string;
-}
+// export interface BubbleMessage {
+//   isFromAimee: boolean;
+//   message: string;
+// }
