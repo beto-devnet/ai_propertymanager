@@ -96,8 +96,10 @@
 
 .sign-up {
   text-align: center;
-  color:  var(--main-color);
-  margin-bottom: 35px;
+  color:  #012345;
+  font-size: 13px;
+  font-weight: 400;
+  margin-top: 45px;
 }
 
 .divider {
