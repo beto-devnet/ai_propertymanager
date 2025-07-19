@@ -1,22 +1,56 @@
 :root {
   --main-color: #012345;
+  --input-background: #EDF2F7;
 }
 
 .login-container {
-  margin: 0 auto;
-  background: white;
-  padding: 48px 0;
+  /*margin: 0 auto;*/
+  /*background: white;*/
+  /*background: linear-gradient(135deg, #1a3a5c 0%, #0d2240 40%, #1e4a6b 70%, #2a7a7a 100%);*/
+  /*padding: 48px 0;*/
   width: 100%;
-  max-width: 400px;
+  height: 100vh;
+  /*max-width: 400px;*/
+  display: flex;
+  justify-content: center;
+
+  .left-side {
+    width: 50%;
+    background: linear-gradient(337.25deg, #1FCE00 -30.24%, #0E974B -11.37%, #00668D 28.06%, #012345 77.52%);
+    img {
+      margin: 80px auto 0;
+    }
+
+    p {
+      font-weight: 300;
+      font-size: 18px;
+      line-height: 35px;
+      letter-spacing: 0;
+      color: white;
+      max-width: 70%;
+      margin: 0 auto;
+      text-align: justify;
+      text-justify: inter-word;
+    }
+  }
+
+  .right-side {
+    width: 50%;
+    padding: 100px
+  }
 }
 
 .header {
   header {
     font-weight: 500;
     font-size: 25px;
-    margin: 15px 0;
-    text-align: center;
-    color: var(--main-color);
+    margin: 15px 0 20px;
+    color: #012345;
+  }
+
+  p {
+    font-weight: lighter;
+    margin-bottom: 4rem;
   }
 
   img {
@@ -35,16 +69,18 @@
   margin-bottom: 20px;
 
   label {
-    font-weight: 500;
+    font-weight: 400;
+    font-size: 14px;
     margin-bottom: 5px;
     color: var(--main-color);
   }
 
   input[type='text'], input[type='password'], select {
     border: 1px solid #E8E8E8C6;
-    border-radius: 8px;
+    border-radius: 5px;
     height: 35px;
     padding: 0 10px;
+    background-color: #EDF2F7;
   }
 
   input:focus {
@@ -59,32 +95,31 @@
   margin-bottom: 35px;
 }
 
+.divider {
+  text-align: center;
+  margin: 24px 0;
+  color: #9ca3af;
+  font-size: 12px;
+  position: relative;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.divider span {
+  background: white;
+  padding: 0 16px;
+}
+
 .signup-google {
   border-bottom: 1px solid #8e8e93;
-
-  .divider {
-    text-align: center;
-    margin: 24px 0;
-    color: #9ca3af;
-    font-size: 12px;
-    position: relative;
-    text-transform: uppercase;
-  }
-
-  .divider::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: #e5e7eb;
-  }
-
-  .divider span {
-    background: white;
-    padding: 0 16px;
-  }
 }
 
 button.submit {
@@ -92,10 +127,13 @@ button.submit {
   color:  white;
   width: 100%;
   padding: 12px 0;
-  font-size: 13px;
-  border-radius: 10px;
+  font-size: 16px;
+  height: 50px;
+  border-radius: 35px;
+  font-weight: 500;
+  /*box-shadow: 20px 20px;*/
 }
 
 .link {
-  color: var(--main-color); ;
+  color: #777E90;
 }

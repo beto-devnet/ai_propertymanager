@@ -1,45 +1,47 @@
 <div class="login-container">
-  <div class="header">
-    <img ngSrc="./assets/img/doorx.jpg" width="200" height="80"  alt="logo">
-    <header>Welcome back</header>
-  </div>
-  <div class="form">
-
-    <div class="form-item">
-      <label>Email</label>
-<!--      <input type="email">-->
-      <select>
-        @for (property of properties(); track $index) {
-          <option [value]="property.id">{{ property.name }}</option>
-        }
-      </select>
-    </div>
-
-
-    <div class="form-item">
-      <label>Password</label>
-      <input type="password" [formControl]="passwordControl">
-    </div>
-
-    <div class="form-item">
-      <div class="inline-block">
-        <label class="mr-4">Use gemini version</label>
-        <input type="checkbox" [formControl]="useGeminiControl">
+  <aside class="left-side">
+    <img ngSrc="assets/img/login-doorx.png" width="600" height="200" alt="login-logo">
+    <p>Report any issue at home and let our AI handle the rest — no calls, no hassle, just fast and reliable solutions.</p>
+  </aside>
+  <aside class="right-side">
+    <div class="max-w-[500px] m-auto">
+      <div class="header">
+        <header>Welcome back!</header>
+        <p>Let's keep everything alright</p>
       </div>
+      <div class="form">
+
+        <div class="form-item">
+          <label>E-mail or phone number</label>
+          <select>
+            @for (property of properties(); track $index) {
+              <option [value]="property.id">{{ property.name }}</option>
+            }
+          </select>
+        </div>
+
+
+        <div class="form-item">
+          <label>Password</label>
+          <input type="password" placeholder="Type your password" [formControl]="passwordControl">
+        </div>
+        <div class="link flex justify-end text-sm font-light">Forgot password?</div>
+
+        <div class="form-item">
+          <div class="inline-block">
+            <input type="checkbox" class="mr-3" [formControl]="useGeminiControl">
+            <label class="mr-4">Use gemini version</label>
+          </div>
+        </div>
+
+
+        <button type="button" class="submit mt-10" matRipple (click)="submit()">Sign in</button>
+      </div>
+<!--      <div class="sign-up">-->
+<!--        <div class="link">Don't you have an account? <strong>Sign up</strong> </div>-->
+<!--      </div>-->
+      <div class="divider">or do it via other accounts</div>
     </div>
+  </aside>
 
-    <div class="link flex justify-end font-medium">Forgot password?</div>
-
-    <button type="button" class="submit mt-10" matRipple (click)="submit()">Sign in</button>
-  </div>
-  <div class="sign-up">
-    <div class="link">Don't you have an account? <strong>Sign up</strong> </div>
-  </div>
-  <div class="signup-google">
-    <div class="divider">or continue with</div>
-    <button type="button" class="submit mt-10">
-      <img ngSrc="./assets/img/icons8-google.svg" height="20" width="20" alt="" class="inline-block mr-4">
-      Google
-    </button>
-  </div>
 </div>
