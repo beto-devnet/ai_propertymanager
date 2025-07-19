@@ -2,6 +2,13 @@
   --header-height: 50px;
 
 }
+.sign-out {
+  background-color: #012345;
+  color: white;
+  border-radius: 30px;
+  width: 130px;
+  font-size: large;
+}
 
 .paginator-container {
   --mat-paginator-container-background-color:  white;
@@ -13,12 +20,12 @@
 
 .demo-container-content {
   display: grid;
-  grid-template-columns: auto auto auto;
-  column-gap: 20px;
+  grid-template-columns: auto 30% auto;
+  column-gap: 10px;
   justify-content: space-around;
 
-  padding-left: 20px;
-  padding-right: 20px;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 .demo-header {

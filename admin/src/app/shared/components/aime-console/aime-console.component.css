@@ -1,14 +1,16 @@
 .aime-console {
-  width: 375px;
+  /*width: 375px;*/
+  width: 100%;
   height: calc(100vh - 90px);
   position: relative;
   /*box-shadow: 2px 2px 2px -2px #8E8E9386;*/
 
   .header-section {
+    color:  white;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #e2e8ff;
+    background: #012345;
     padding: 8px 12px;
     height: 100px;
     font-size: 15px;
@@ -23,13 +25,14 @@
   }
 
   .header-log img {
-    object-fit: contain;
-    margin-right: 10px;
+    margin: 0 auto;
+    padding-top: 5px;
   }
 
   .header-ticket {
     display:  flex;
-    /*font-size: 16px;*/
+    font-size: 13px;
+    font-weight: lighter;
     align-items: center;
   }
 
