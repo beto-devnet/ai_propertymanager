@@ -3,6 +3,11 @@
   --input-background: #EDF2F7;
 }
 
+.mat-mdc-mini-fab {
+  color: black !important;
+  border-radius: 100%;
+}
+
 .login-container {
   /*margin: 0 auto;*/
   /*background: white;*/
@@ -132,6 +137,15 @@ button.submit {
   border-radius: 35px;
   font-weight: 500;
   /*box-shadow: 20px 20px;*/
+}
+
+.icon-button {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
 .link {

@@ -7,6 +7,10 @@ import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { NgOptimizedImage } from '@angular/common';
 import { MatRipple } from '@angular/material/core';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faG, faAppleWhole, faF } from '@fortawesome/free-solid-svg-icons';
+import { MatMiniFabButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
   selector: 'app-login',
@@ -14,7 +18,10 @@ import { MatRipple } from '@angular/material/core';
     ReactiveFormsModule,
     FormsModule,
     NgOptimizedImage,
-    MatRipple
+    MatRipple,
+    FontAwesomeModule,
+    MatMiniFabButton,
+    MatIcon
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
@@ -29,6 +36,9 @@ export default class LoginComponent implements OnInit {
   useGeminiControl: FormControl = new FormControl(false);
   properties = signal<PropertyBrief[]>([]);
 
+  faGoogle =  faG;
+  faApple = faAppleWhole;
+  faFacebook =  faF
   ngOnInit(): void {
     this.service
       .allPropertiesBrief()
@@ -57,5 +67,4 @@ export default class LoginComponent implements OnInit {
   changeSelectedUser(ev: any) {
     this.selectedUserId = ev.target.value;
   }
-
 }
