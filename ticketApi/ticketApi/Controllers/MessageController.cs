@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using ticketApi.Models;
 using ticketApi.Services;
+using ticketApi.Services.GeminiServices;
 
 namespace ticketApi.Controllers
 {
@@ -16,12 +17,12 @@ namespace ticketApi.Controllers
             _demoActions = demoActions;
         }
 
-        // [HttpGet("randon-tenant")]
-        // public async Task<IActionResult> GetRandomTenant()
-        // {
-        //     var tenant = _demoActions.GetRandomTenant();
-        //     return await Task.FromResult(Ok(tenant));
-        // }
+        [HttpGet("prompt/{propertyId}")]
+        public async Task<IActionResult> GetPrompt(int propertyId)
+        {
+            var result = _demoActions.GeneratePrompt(propertyId);
+            return await Task.FromResult(Ok(result));
+        }
         
         [HttpGet("all-properties-brief")]
         public async Task<IActionResult> GetAllPropertiesBrief()

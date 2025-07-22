@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable, tap } from 'rxjs';
 import { Example } from '../demo/models/example.model';
 import { Category } from '../demo/models/category.example';
 import { Vendor } from '../demo/models/vendor.model';
@@ -15,6 +15,11 @@ export class ChatService {
   private httpClient: HttpClient = inject(HttpClient);
 
   constructor() { }
+
+  getPrompt(propertyId: number): Observable<string> {
+    const url = `${this.path}/message/prompt/${propertyId}`;
+    return this.httpClient.request('get', url, { responseType: 'text' });
+  }
 
   getIssues(): Observable<Example[]> {
     const url = `${this.path}/message/examples`;

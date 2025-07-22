@@ -3,15 +3,15 @@ using ErrorOr;
 using RestSharp;
 using ticketApi.Models;
 
-namespace ticketApi.Services;
+namespace ticketApi.Services.GeminiServices;
 
-public class GeminiService
+public class ProcessGeminiService
 {
     private readonly RestClient _client;
     private readonly string _apiKey;
     private bool _disposed = false;
 
-    public GeminiService(string apiKey)
+    public ProcessGeminiService(string apiKey)
     {
         _apiKey = apiKey;
         

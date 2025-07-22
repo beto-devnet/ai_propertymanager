@@ -9,10 +9,10 @@ public class VendorService
         _suppliers = new List<Models.Models.Vendor>
         {
 
-            new Models.Models.Vendor(1, "plumbing", true, "Jose Plumbing",
+            new(1, "plumbing", true, "Jose Plumbing",
                 "Anything plumbing. We fix waterheaters, stuck toilets, dripping faucets and more",
                 [new Models.Models.Contact("Jose Perez", "jose@joeplumbing.com", "111-456-7890", "sms")]),
-            new Models.Models.Vendor(
+            new(
                 2, "plumbing", false, "Maris Plumbing", "",
                 new List<Models.Models.Contact>
                 {
@@ -48,10 +48,10 @@ public class VendorService
                 }
             ),
             new Models.Models.Vendor(
-                7, "HVAC", false, "Anuar Air conditioning", "",
+                7, "HVAC", false, "Jordan Air conditioning", "",
                 new List<Models.Models.Contact>
                 {
-                    new Models.Models.Contact("Anuar Joe", "anu@hvac1.com", "666-456-7890", "sms")
+                    new Models.Models.Contact("Jordan Conor", "anu@hvac1.com", "666-456-7890", "sms")
                 }
             ),
             new Models.Models.Vendor(
@@ -62,7 +62,7 @@ public class VendorService
                 }
             ),
             new Models.Models.Vendor(
-                9, "HVAC", false, "AllAir conditioning", "",
+                9, "HVAC", false, "All Air conditioning", "",
                 new List<Models.Models.Contact>
                 {
                     new Models.Models.Contact("Oscar Yola", "oscar@hvac3.com", "888-456-7890", "sms")

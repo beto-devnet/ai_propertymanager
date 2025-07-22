@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ticketApi.Models;
 using ticketApi.Services;
 using ticketApi.Services.AIServices;
+using ticketApi.Services.GeminiServices;
 using ticketApi.ticketApi.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,11 +19,9 @@ builder.Services.AddTransient<PropertyService>();
 builder.Services.AddTransient<VendorService>();
 builder.Services.AddTransient<CategoryService>();
 builder.Services.AddTransient<TicketService>();
-// builder.Services.AddTransient<DemoServices>();
 builder.Services.AddTransient<DemoActions>();
-builder.Services.AddTransient<TenantService>();
 builder.Services.AddTransient<ChatGptService>();
-builder.Services.AddTransient<GeminiService>(provider => new GeminiService("AIzaSyDvUWGoGCR-fMLnG2-eEUVqimt8x1DLrs4"));
+builder.Services.AddTransient<ProcessGeminiService>(provider => new ProcessGeminiService("AIzaSyDvUWGoGCR-fMLnG2-eEUVqimt8x1DLrs4"));
 
 builder.Services.Configure<AISettings>(builder.Configuration.GetSection(AISettings.SectionName));
 builder.Services.Configure<ChatGptSettings>(builder.Configuration.GetSection(ChatGptSettings.SectionName));

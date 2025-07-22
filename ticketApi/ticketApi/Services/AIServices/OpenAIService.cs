@@ -1,8 +1,7 @@
 ﻿using System.Text.Json;
-using NuGet.Protocol;
 using RestSharp;
 
-namespace ticketApi.Services;
+namespace ticketApi.Services.AIServices;
 
 public class OpenAIService
 {
