@@ -1,0 +1,110 @@
+<div class="demo-container">
+  <mat-toolbar class="demo-header">
+    <div class="flex justify-between w-full align-top">
+      <img ngSrc="./assets/img/doorx.png" width="120" height="120" alt="">
+      <div class="inline pt-2">
+        <div>Ticketing System Simulation</div>
+      </div>
+      <button class="sign-out" [routerLink]="'/login'">Sign out</button>
+    </div>
+  </mat-toolbar>
+  <div class="demo-container-content">
+    <!--  Chat tenant-->
+    <div class="demo-phone">
+      <div class="demo-phone-status-bar">
+        <div class="time">9:41</div>
+        <div class="black-notch">.</div>
+        <div class="battery-status">
+          <span>100%</span>
+          <div class="battery-icon">
+            <div class="battery-fill"></div>
+          </div>
+        </div>
+      </div>
+      <header>
+        <div>
+          <img width="120px" fetchpriority="high" alt="" src="https://www.buildium.com/wp-content/uploads/2023/08/buildium-logo-1.svg">
+        </div>
+        <div>{{ propertySelected.tenant.name }}</div>
+        <div>
+          <img ngSrc="./assets/img/person.jpeg" alt="" height="30" width="40" class="rounded-full">
+        </div>
+      </header>
+      <div class="demo-issue-input">
+        <textarea [formControl]="issueMessageControl" rows="4"></textarea>
+        <button class="relative bottom-20 float-right left-3  rounded-full w-9 issue-button" mat-ripple (click)="processIssue()" [disabled]="blockButton()">
+          <mat-icon class="mat-icon-white mt-1">add</mat-icon>
+        </button>
+
+        <div class="inline">
+          <mat-paginator
+            class="float-end paginator-container"
+            [pageSizeOptions]="[]"
+            [pageSize]="1"
+            [length]="examples.length"
+            [hidePageSize]="true"
+            (page)="handlePageEvent($event)">
+          </mat-paginator>
+        </div>
+      </div>
+      <div class="messages">
+        @for (message of tenantMessages(); track $index) {
+          <div class="bubble-message" [ngClass]="message.type === 'Sent' ? 'sent' : 'received'">
+            <div class="bubble-message-content"> {{ message.text }} </div>
+          </div>
+        }
+        <div #scrollToTenant>
+          @if(typingTenant()) {
+            <typing-dots></typing-dots>
+          }
+        </div>
+      </div>
+      <div class="demo-phone-input">
+        <textarea class="demo-phone-chat-input" type="text" [formControl]="tenantMessageControl" rows="3" (keydown.enter)="processMessageFromTenant($event)"></textarea>
+        <button (click)="processMessageFromTenant($event)">
+          <mat-icon class="text-green-600">send</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <aime-console [messages]="agentMessage()"></aime-console>
+
+    <!--  Chat vendor-->
+    <div class="demo-phone">
+      <div class="demo-phone-status-bar">
+        <div class="time">9:41</div>
+        <div class="black-notch">.</div>
+        <div class="battery-status">
+          <span>100%</span>
+          <div class="battery-icon">
+            <div class="battery-fill"></div>
+          </div>
+        </div>
+      </div>
+      <header>
+        <div>Vendor</div>
+        <div>-</div>
+        {{ selectedVendorName }}
+      </header>
+      <div class="messages">
+        @for (message of vendorMessages(); track $index) {
+          <div class="bubble-message" [ngClass]="message.type == 'Sent' ? 'sent' : 'received'">
+            <div class="bubble-message-content"> {{ message.text }} </div>
+          </div>
+        }
+        <div #scrollToVendor>
+          @if(typingVendor()) {
+            <typing-dots></typing-dots>
+          }
+        </div>
+      </div>
+      <div class="demo-phone-input">
+        <textarea class="demo-phone-chat-input" [formControl]="vendorMessageControl" (keydown.enter)="processMessageFromVendor($event)"></textarea>
+        <button (click)="processMessageFromVendor($event)">
+          <mat-icon class="text-blue-600">send</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,226 @@
+:root {
+  --header-height: 50px;
+
+}
+
+.sign-out {
+  background-color: #012345;
+  color: white;
+  border-radius: 30px;
+  width: 130px;
+  font-size: large;
+}
+
+.paginator-container {
+  --mat-paginator-container-background-color:  white;
+}
+
+.demo-container {
+
+}
+
+.demo-container-content {
+  display: grid;
+  grid-template-columns: auto 30% auto;
+  column-gap: 10px;
+  justify-content: space-around;
+
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.demo-header {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  height: var(--header-height);
+  grid-column-start: 1;
+  grid-column-end: 4;
+}
+
+.demo-issue-input {
+  margin: 20px 15px 0;
+
+  textarea {
+    width: 100%;
+    border-radius: 10px;
+    resize: none;
+    padding: 8px;
+  }
+}
+
+
+
+.demo-phone {
+  border: 10px solid black;
+  width: 375px;
+  height: calc(100vh - 90px);
+  border-radius: 36px;
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  header {
+    position: sticky;
+    top: 0;
+    min-height: 60px;
+    background: rgba(248, 248, 248, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 5;
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+}
+
+.demo-phone-status-bar {
+  min-height: 40px;
+  background: #f8f8f8;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #000;
+  border-bottom: 1px solid #e5e5e7;
+  z-index: -1;
+}
+
+.black-notch {
+  background: black;
+  height: 32px;
+  width: 120px;
+  border-radius: 0 0 14px 14px;
+}
+
+
+.demo-phone-input {
+  width: 100%;
+  border: 1px white solid;
+  height: 80px;
+  padding: 10px;
+  display:  flex;
+  justify-content: space-between;
+  border-bottom-left-radius: 30px;
+  border-bottom-right-radius: 25px;
+}
+
+.demo-phone-chat-input {
+  flex: 1;
+  border: 1px solid #e5e5e7;
+  border-radius: 20px;
+  padding: 8px 12px;
+  font-size: 16px;
+  resize: none;
+  max-height: 80px; /* approximately 3 lines */
+  min-height: 40px;
+  line-height: 20px;
+  overflow-y: hidden;
+}
+
+.demo-phone-chat-input:focus {
+  outline: none;
+}
+
+.messages {
+  height: 100%;
+  background: white;
+  overflow-y: auto;
+  border-bottom-right-radius:  25px;
+  border-bottom-left-radius:  25px;
+  z-index: 0;
+}
+
+.messages::-webkit-scrollbar {
+  width: 4px;
+}
+
+.messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messages::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.message-item {
+  margin: 15px;
+  padding: 12px 0;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  position: relative;
+  word-wrap: break-word;
+
+  div.time {
+    font-size: 11px;
+    color: #999;
+    margin-top: 4px;
+    text-align: end;
+  }
+}
+
+.message-item-content {
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  position: relative;
+  word-wrap: break-word;
+  width: 100%;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bubble-message {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin: 8px 15px;
+}
+
+.bubble-message.sent {
+  flex-direction: row-reverse;
+}
+
+.bubble-message.received {
+  flex-direction: row;
+}
+
+.bubble-message-content {
+  max-width: 70%;
+  padding: 12px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  line-height: 1.4;
+  position: relative;
+  word-wrap: break-word;
+  background: #e9ecef;
+  color: #212529;
+}
+
+.bubble-message.sent .bubble-message-content {
+  background: #46B1FF;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.bubble-message.received .bubble-message-content {
+  background: #f8f9fa;
+  color: #212529;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+

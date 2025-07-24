@@ -1,0 +1,44 @@
+<div class="aime-console">
+  <header class="header-section">
+    <div class="header-log">
+      <div class="bg-white rounded-full h-12 w-12 mr-3">
+        <img ngSrc="assets/img/chat_logo.png" width="40" height="40" alt="icon" class="">
+      </div>
+      <div class="text-lg">Events Log</div>
+    </div>
+    <div class="header-ticket">
+      <mat-icon>receipt</mat-icon>
+      <div>Ticker ID: 7845968</div>
+    </div>
+  </header>
+
+
+  <div class="main-section">
+    @for (message of messages(); track $index) {
+      <div class="main-section-message">
+        <header class="header">
+          <section class="title">{{ message.title }}</section>
+          <section class="date">{{ message.date | date }}</section>
+        </header>
+
+        <div class="message-content">
+          @if (message.description) {
+            <p class="description">{{ message.description }}</p>
+          }
+          @for (contentItem of message.messageContent; track $index) {
+            <section class="message-content-item" [class.content-inline]="message.title.toLowerCase() == 'issue request'">
+              <label> {{ contentItem.name }} </label>
+              <p> {{ contentItem.text }} </p>
+            </section>
+          }
+        </div>
+      </div>
+    }
+
+    <div #scrollTo>
+      @if(typing()) {
+        <typing-dots></typing-dots>
+      }
+    </div>
+  </div>
+</div>
