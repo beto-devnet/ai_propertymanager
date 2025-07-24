@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { LoginRequest, Property2, PropertyBrief } from './models';
+import { LoginRequest, Property2, TenantLogin } from './models';
 
 @Injectable({
   providedIn: 'root'
@@ -18,8 +18,8 @@ export class LoginService {
     return this.httpClient.post<Property2>(`${environment.apiUrl}/message/login`, request);
   }
 
-  allPropertiesBrief(): Observable<PropertyBrief[]> {
-    return this.httpClient.get<PropertyBrief[]>(`${environment.apiUrl}/message/all-properties-brief`);
+  getAllTenants(): Observable<TenantLogin[]> {
+    return this.httpClient.get<TenantLogin[]>(`${environment.apiUrl}/management/tenants`);
   }
 
   allProperties(): Observable<Property2[]> {

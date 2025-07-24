@@ -4,6 +4,7 @@
   "scripts": {
     "ng": "ng",
     "prestart": "node aspnetcore-https",
+    "start:serve": "ng serve",
     "start": "run-script-os",
     "start:windows": "ng serve --ssl --ssl-cert \"%APPDATA%\\ASP.NET\\https\\%npm_package_name%.pem\" --ssl-key \"%APPDATA%\\ASP.NET\\https\\%npm_package_name%.key\" --host=127.0.0.1",
     "start:default": "ng serve --ssl --ssl-cert \"$HOME/.aspnet/https/${npm_package_name}.pem\" --ssl-key \"$HOME/.aspnet/https/${npm_package_name}.key\"",
@@ -33,7 +34,9 @@
     "@angular/platform-browser": "^20.1.0",
     "@angular/router": "^20.1.0",
     "@google/genai": "^1.8.0",
+    "@iconify-json/ph": "^1.2.2",
     "@tailwindcss/postcss": "^4.1.11",
+    "iconify-icon": "^3.0.0",
     "postcss": "^8.5.6",
     "run-script-os": "^1.1.6",
     "rxjs": "~7.8.0",

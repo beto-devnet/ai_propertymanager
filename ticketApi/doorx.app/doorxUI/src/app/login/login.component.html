@@ -1,6 +1,6 @@
 <div class="login-container">
   <aside class="left-side">
-    <img ngSrc="assets/img/login-doorx.png" width="600" height="200" alt="login-logo">
+    <img ngSrc="assets/img/login-doorx.png" width="4001" height="1870" alt="login-logo" style="object-fit: fill" priority>
     <p>Report any issue at home and let our AI handle the rest — no calls, no hassle, just fast and reliable solutions.</p>
   </aside>
   <aside class="right-side">
@@ -35,18 +35,21 @@
         </div>
 
 
-        <button type="button" class="submit mt-10" matRipple (click)="submit()">Sign in</button>
+        <button type="button" class="submit mt-10 hover:cursor-pointer" matRipple (click)="submit()">Sign in</button>
       </div>
       <div class="divider">or do it via other accounts</div>
 
       <div class="flex justify-evenly mt-14">
         <button matMiniFab aria-label="Example icon button with a menu icon">
+          <icon name="fa6-brands:google" size='20' rgbColor="#012345"></icon>
         </button>
 
         <button matMiniFab aria-label="Example icon button with a menu icon">
+          <icon name="fa6-brands:apple" size="20" rgbColor="#012345"></icon>
         </button>
 
         <button matMiniFab aria-label="Example icon button with a menu icon">
+          <icon name="fa6-brands:facebook-f" size="20" rgbColor="#012345"></icon>
         </button>
 
       </div>

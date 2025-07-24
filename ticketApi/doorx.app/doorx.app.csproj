@@ -6,7 +6,7 @@
         <IsPackable>false</IsPackable>
         <SpaRoot>doorxUI\</SpaRoot>
         <SpaProxyServerUrl>https://localhost:4200</SpaProxyServerUrl>
-        <SpaProxyLaunchCommand>npm start:windows</SpaProxyLaunchCommand>
+        <SpaProxyLaunchCommand>npm start:serve</SpaProxyLaunchCommand>
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 

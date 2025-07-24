@@ -1,6 +1,6 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { LoginService } from './login.service';
-import { PropertyBrief } from './models';
+import { TenantLogin } from './models';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { tap } from 'rxjs';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -8,6 +8,7 @@ import { Router } from '@angular/router';
 import { NgOptimizedImage } from '@angular/common';
 import { MatRipple } from '@angular/material/core';
 import { MatMiniFabButton } from '@angular/material/button';
+import { Icon } from '../shared/components/icon/icon';
 
 @Component({
   selector: 'app-login',
@@ -17,9 +18,11 @@ import { MatMiniFabButton } from '@angular/material/button';
     NgOptimizedImage,
     MatRipple,
     MatMiniFabButton,
+    Icon
   ],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.css'
+  styleUrl: './login.component.css',
+
 })
 export default class LoginComponent implements OnInit {
 
@@ -29,14 +32,14 @@ export default class LoginComponent implements OnInit {
   selectedUserId: number = 1;
   passwordControl: FormControl = new FormControl<string>('');
   useGeminiControl: FormControl = new FormControl(false);
-  properties = signal<PropertyBrief[]>([]);
+  properties = signal<TenantLogin[]>([]);
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.service
-      .allPropertiesBrief()
+      .getAllTenants()
       .pipe(
         takeUntilDestroyed(this.destroyRef$),
-        tap((result: PropertyBrief[]) => {
+        tap((result: TenantLogin[]) => {
           this.selectedUserId = result[0].id;
           this.properties.set(result);
         })

@@ -16,7 +16,7 @@ export interface Property2 {
     leaseAgreementClauses: LeaseAgreementClause[];
 }
 
-export interface PropertyBrief {
+export interface TenantLogin {
   id: number;
   name: string
 }
