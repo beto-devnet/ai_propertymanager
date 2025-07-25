@@ -59,6 +59,7 @@ export default class ChatComponent implements OnInit, AfterViewChecked {
   propertySelected: Property2 = { id: 0, address: '', tenant: { name: '', telephone: '' }, landlord: '', leaseAgreementClauses: [] };
   private selectedUserId: number = 0;
   private composable = Composable();
+  private issueDescription: string = '';
   private prompt = '';
   issueMessageControl: FormControl = new FormControl<string>('');
   tenantMessageControl: FormControl = new FormControl<string>('');
@@ -93,6 +94,7 @@ export default class ChatComponent implements OnInit, AfterViewChecked {
     this.selectedUserId = Number.parseInt(this.activatedRoute.snapshot.params['id'] || '1');
     this.loadExampleIssues();
     this.loadAllVendors();
+    this.loadAllProperties();
     this.service
       .getPrompt(this.selectedUserId)
       .pipe(
@@ -186,6 +188,7 @@ export default class ChatComponent implements OnInit, AfterViewChecked {
 
   async processIssue(): Promise<void> {
     const issue = this.issueMessageControl.value;
+    this.issueDescription = issue;
     if(issue.length == 0) {
       return;
     }
@@ -233,7 +236,7 @@ export default class ChatComponent implements OnInit, AfterViewChecked {
 
     if(chatResponse.stepNumber === 1 && chatResponse.isCompleted && chatResponse.resolutionResponsibility !== 'Tenant') {
       const category = chatResponse.Category ?? 'general';
-      await this.selectVendor(category);
+      await this.selectVendor(category, issue);
     }
 
     this.blockButton.set(false);
@@ -285,7 +288,7 @@ export default class ChatComponent implements OnInit, AfterViewChecked {
 
     if(chatResponse.stepNumber === 1 && chatResponse.isCompleted) {
       const category = chatResponse.Category ?? 'general';
-      await this.selectVendor(category);
+      await this.selectVendor(category, this.issueDescription);
     } else if(chatResponse.stepNumber === 6 && chatResponse.isCompleted) {
       const finishedMessage = new MessageBuilder()
         .createNewLogMessage()
@@ -343,11 +346,11 @@ export default class ChatComponent implements OnInit, AfterViewChecked {
     await this.showMessageToTenant(MessageToTenant);
 
     if(stepNumber === 3 && !isCompleted) {
-      await this.selectVendor(this.categoryNameSelected);
+      await this.selectVendor(this.categoryNameSelected, this.issueDescription);
     }
   }
 
-  private async selectVendor(category: string): Promise<void> {
+  private async selectVendor(category: string, issue: string): Promise<void> {
     let vendor: Vendor;
     const filteredVendors = this.vendors.filter(vendor => vendor.category.trim().toLowerCase() === category.trim().toLowerCase());
     if(filteredVendors.length > 1) {
@@ -372,7 +375,10 @@ export default class ChatComponent implements OnInit, AfterViewChecked {
       return;
     }
 
-    const { MessageToVendor, MessageToTenant } = aimeResponse;
+    let { MessageToVendor, MessageToTenant } = aimeResponse;
+    if(MessageToVendor) {
+      MessageToVendor = `Hi ${vendor.contacts[0].name}, this is Aimee from Mila Realty. We have an ${category} issue at ${this.propertySelected.address} (tenant: ${this.propertySelected.tenant.name} - ${this.propertySelected.tenant.telephone}). ${issue}.  Are you available to take this job? If so let me know and go ahead and contact the tenant directly to schedule a time that works for both of you. Please reply to confirm you are available.`;
+    }
     const updateMessage = new MessageBuilder()
       .createNewLogMessage()
       .withTitle('Vendor selected')

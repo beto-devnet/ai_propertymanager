@@ -1,6 +1,7 @@
 using doorx.application.Common;
 using doorx.application.OpenAI;
 using doorx.application.OpenAI.Settings;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
