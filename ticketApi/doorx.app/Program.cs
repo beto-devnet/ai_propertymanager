@@ -1,4 +1,6 @@
 using doorx.application.Common;
+using doorx.application.OpenAI;
+using doorx.application.OpenAI.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +16,10 @@ builder.Services.Scan(scan => scan
     .AsSelfWithInterfaces()
     .WithScopedLifetime()
 );
+
+builder.Services.AddTransient<OpenAIService>();
+// builder.Services.Configure<AISettings>(builder.Configuration.GetSection(AISettings.SectionName));
+builder.Services.Configure<ChatGptSettings>(builder.Configuration.GetSection(ChatGptSettings.SectionName));
     
 builder.Services.AddCors(
     options =>

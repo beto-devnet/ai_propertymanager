@@ -10,4 +10,19 @@
       <ProjectReference Include="..\doorx.domain\doorx.domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="Microsoft.Extensions.Options">
+        <HintPath>..\..\..\..\..\Program Files\dotnet\shared\Microsoft.AspNetCore.App\8.0.18\Microsoft.Extensions.Options.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="ErrorOr" Version="2.0.1" />
+      <PackageReference Include="OpenAI" Version="2.2.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="OpenAI\Dtos\" />
+    </ItemGroup>
+
 </Project>

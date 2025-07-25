@@ -40,7 +40,6 @@ export default class GptComponent implements OnInit, AfterViewChecked {
   private activatedRoute = inject(ActivatedRoute);
   private chatGptService: ChatGptService = inject(ChatGptService);
   private destroyedRef$: DestroyRef = inject(DestroyRef);
-  private loginService: LoginService = inject(LoginService);
   examples: Example[] = [];
   categoryNameSelected: string = '';
   selectedVendorName = '';
@@ -125,8 +124,13 @@ export default class GptComponent implements OnInit, AfterViewChecked {
       return;
     }
 
-    const threadResponse = await lastValueFrom(this.chatGptService.startThread());
-    this.threadId = threadResponse.threadId;
+    try {
+      const threadResponse = await lastValueFrom(this.chatGptService.startThread());
+      this.threadId = threadResponse.threadId;
+    } catch (e) {
+      console.error('Error processing issue:', e);
+      return;
+    }
 
     const { tenant } = this.propertySelected;
 
@@ -282,7 +286,7 @@ export default class GptComponent implements OnInit, AfterViewChecked {
 
   private async selectVendor(category: string, issue: string): Promise<void> {
     let vendor: Vendor;
-    const filteredVendors = this.vendors.filter(vendor => vendor.category.trim().toLowerCase() === category.trim().toLowerCase());
+    const filteredVendors = this.vendors.filter(vendor => vendor.category.name.trim().toLowerCase() === category.trim().toLowerCase());
     if(filteredVendors.length > 1) {
       const randomIndex = Math.floor(Math.random() * filteredVendors.length);
       vendor = filteredVendors[randomIndex];
@@ -318,7 +322,7 @@ export default class GptComponent implements OnInit, AfterViewChecked {
   }
 
   private loadAllProperties(): void {
-    this.loginService
+    this.chatGptService
       .allProperties()
       .pipe(
         takeUntilDestroyed(this.destroyedRef$),

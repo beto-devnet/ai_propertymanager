@@ -1,10 +1,16 @@
 ﻿export interface Vendor {
   id: number,
-  category: string,
-  preferedVendor: boolean,
+  category: Category,
+  preferredVendor: boolean,
   companyName: string,
   descriptionOfServices: string,
   contacts: Contact[]
+}
+
+export interface Category {
+  id: number,
+  name: string,
+  description: string
 }
 
 export interface Contact {
