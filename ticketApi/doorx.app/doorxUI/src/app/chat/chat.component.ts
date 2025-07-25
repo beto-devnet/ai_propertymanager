@@ -443,36 +443,36 @@ export default class ChatComponent implements OnInit, AfterViewChecked {
       .subscribe();
   }
 
-  private loadAllCategoriesSub(): Observable<string> {
-    return this.service
-      .getCategories()
-      .pipe(
-        takeUntilDestroyed(this.destroyedRef$),
-        map((categories: Category[]) => categories.map((category: Category) => category.name).join(', '))
-      );
-  }
+  // private loadAllCategoriesSub(): Observable<string> {
+  //   return this.service
+  //     .getCategories()
+  //     .pipe(
+  //       takeUntilDestroyed(this.destroyedRef$),
+  //       map((categories: Category[]) => categories.map((category: Category) => category.name).join(', '))
+  //     );
+  // }
 
-  private loadAllClausesSub(): Observable<string> {
-    return this.loginService
-      .allProperties()
-      .pipe(
-        takeUntilDestroyed(this.destroyedRef$),
-        map((result: Property2[]) => result.find(x => x.id === this.selectedUserId) || result[0]),
-        tap((propertyResult: Property2) => this.propertySelected = propertyResult),
-        map(property => property.leaseAgreementClauses),
-        map((clauses: LeaseAgreementClause[]) => {
-          let clausesSting = 'Clauses: \n';
-          clauses.forEach((clause: LeaseAgreementClause, index) => {
-            clausesSting += `\n\t${index+1}. ${clause.category} \n\t- ${clause.clause}`
-          });
-
-          if(clauses.length == 0) {
-            clausesSting += 'No clauses.';
-          }
-          return clausesSting;
-        })
-      );
-  }
+  // private loadAllClausesSub(): Observable<string> {
+  //   return this.loginService
+  //     .allProperties()
+  //     .pipe(
+  //       takeUntilDestroyed(this.destroyedRef$),
+  //       map((result: Property2[]) => result.find(x => x.id === this.selectedUserId) || result[0]),
+  //       tap((propertyResult: Property2) => this.propertySelected = propertyResult),
+  //       map(property => property.leaseAgreementClauses),
+  //       map((clauses: LeaseAgreementClause[]) => {
+  //         let clausesSting = 'Clauses: \n';
+  //         clauses.forEach((clause: LeaseAgreementClause, index) => {
+  //           clausesSting += `\n\t${index+1}. ${clause.category} \n\t- ${clause.clause}`
+  //         });
+  //
+  //         if(clauses.length == 0) {
+  //           clausesSting += 'No clauses.';
+  //         }
+  //         return clausesSting;
+  //       })
+  //     );
+  // }
 
   private loadExampleIssues(): void {
     this.service.getIssues()

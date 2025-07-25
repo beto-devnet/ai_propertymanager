@@ -3,7 +3,6 @@ import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Example } from './models/Example';
-import { Category } from './models/Category';
 import { Vendor } from './models/Vendor';
 import { Property } from './models/Property';
 
@@ -27,11 +26,6 @@ export class ChatService {
     return this.httpClient.get<Example[]>(url);
   }
 
-  getCategories(): Observable<Category[]> {
-    const url = `${this.path}/category/list`;
-    return this.httpClient.get<Category[]>(url);
-  }
-
   getVendors(): Observable<Vendor[]> {
     const url = `${this.path}/management/vendor-list`;
     return this.httpClient.get<Vendor[]>(url);
@@ -41,8 +35,13 @@ export class ChatService {
     return this.httpClient.get<Property[]>(`${environment.apiUrl}/management/properties`);
   }
 
-  getVendor(category: string): Observable<Vendor> {
-    const url = `${this.path}/message/get-vendor/${category}`;
-    return this.httpClient.get<Vendor>(url);
-  }
+  // getCategories(): Observable<Category[]> {
+  //   const url = `${this.path}/category/list`;
+  //   return this.httpClient.get<Category[]>(url);
+  // }
+
+  // getVendor(category: string): Observable<Vendor> {
+  //   const url = `${this.path}/message/get-vendor/${category}`;
+  //   return this.httpClient.get<Vendor>(url);
+  // }
 }

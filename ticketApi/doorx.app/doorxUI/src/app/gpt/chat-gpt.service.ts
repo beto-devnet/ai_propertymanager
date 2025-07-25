@@ -6,7 +6,6 @@ import { ThreadResponse } from './models/ThreadResponse';
 import { ChatGptResponse } from './models/ChatGptResponse';
 import { Request as IssueRequest } from './models/Issue';
 import { MessageRequest } from './models/MessageRequest';
-import { Category } from './models/Category'
 import { Vendor } from './models/Vendor'
 import { Example } from './models/Example'
 import { Property } from '../chat/models/Property';
