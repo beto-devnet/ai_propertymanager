@@ -49,7 +49,7 @@ export default class ChatComponent implements OnInit, AfterViewChecked {
   private service: ChatService = inject(ChatService);
   private destroyedRef$: DestroyRef = inject(DestroyRef);
   private loginService: LoginService = inject(LoginService);
-  private ai = new GoogleGenAI({ apiKey: 'AIzaSyDvUWGoGCR-fMLnG2-eEUVqimt8x1DLrs4' });
+  private ai!: GoogleGenAI;
   private model = 'gemini-2.5-flash';
   private chat!: Chat;
   examples: Example[] = [];
@@ -93,6 +93,7 @@ export default class ChatComponent implements OnInit, AfterViewChecked {
     this.selectedUserId = Number.parseInt(this.activatedRoute.snapshot.params['id'] || '1');
     this.loadExampleIssues();
     this.loadAllVendors();
+    this.loadAllProperties();
     this.service
       .getPrompt(this.selectedUserId)
       .pipe(
@@ -108,7 +109,8 @@ export default class ChatComponent implements OnInit, AfterViewChecked {
   }
 
   private creteAIChat(prompt: string){
-    if(!this.chat) {
+    try {
+      this.ai = new GoogleGenAI({ apiKey: 'AIzaSyDvUWGoGCR-fMLnG2-eEUVqimt8x1DLrs4' });
       this.chat = this.ai.chats.create({
         model: this.model,
         config: {
@@ -154,6 +156,8 @@ export default class ChatComponent implements OnInit, AfterViewChecked {
         },
         history: []
       });
+    } catch (e) {
+      console.error('Error creating AI chat:', e);
     }
   }
 
@@ -349,7 +353,7 @@ export default class ChatComponent implements OnInit, AfterViewChecked {
 
   private async selectVendor(category: string): Promise<void> {
     let vendor: Vendor;
-    const filteredVendors = this.vendors.filter(vendor => vendor.category.trim().toLowerCase() === category.trim().toLowerCase());
+    const filteredVendors = this.vendors.filter(vendor => vendor.category.name.trim().toLowerCase() === category.trim().toLowerCase());
     if(filteredVendors.length > 1) {
       const randomIndex = Math.floor(Math.random() * filteredVendors.length);
       vendor = filteredVendors[randomIndex];
@@ -429,7 +433,7 @@ export default class ChatComponent implements OnInit, AfterViewChecked {
   }
 
   private loadAllProperties(): void {
-    this.loginService
+    this.service
       .allProperties()
       .pipe(
         takeUntilDestroyed(this.destroyedRef$),

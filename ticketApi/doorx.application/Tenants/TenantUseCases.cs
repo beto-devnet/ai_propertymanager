@@ -2,4 +2,4 @@
 
 namespace doorx.application.Tenants;
 
-public record TenantUseCases(GetAll GetAll) : IRecord;
+public record TenantUseCases(GetAll GetAll, GetIssuesExamples GetIssuesExamples) : IRecord;

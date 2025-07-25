@@ -1,7 +1,6 @@
 using doorx.application.Properties;
 using doorx.application.Tenants;
-using doorx.application.Vendor;
-using Microsoft.AspNetCore.Http;
+using doorx.application.Vendors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace doorx.app.Controllers
@@ -33,6 +32,20 @@ namespace doorx.app.Controllers
         {
             var tenants = _tenantUseCases.GetAll.Execute();
             return Ok(tenants);
+        }
+        
+        [HttpGet("issues-examples")]
+        public IActionResult GetIssueExamples()
+        {
+            var issueExamples = _tenantUseCases.GetIssuesExamples.Execute();
+            return Ok(issueExamples);
+        }
+        
+        [HttpGet("vendor-list")]
+        public IActionResult GetVendorList()
+        {
+            var vendors = _vendorUseCases.List.Execute();
+            return Ok(vendors);
         }
 
         [HttpGet("vendor-by-category/{categoryName}")]

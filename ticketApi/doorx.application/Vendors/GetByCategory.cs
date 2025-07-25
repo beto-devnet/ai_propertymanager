@@ -1,7 +1,7 @@
 ﻿using doorx.application.Common;
 using doorx.domain;
 
-namespace doorx.application.Vendor;
+namespace doorx.application.Vendors;
 
 public class GetByCategory: IUseCase
 {

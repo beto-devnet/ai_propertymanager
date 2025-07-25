@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { Example } from './models/Example';
 import { Category } from './models/Category';
 import { Vendor } from './models/Vendor';
+import { Property } from './models/Property';
 
 @Injectable({
   providedIn: 'root'
@@ -17,12 +18,12 @@ export class ChatService {
   constructor() { }
 
   getPrompt(propertyId: number): Observable<string> {
-    const url = `${this.path}/message/prompt/${propertyId}`;
+    const url = `${this.path}/gemini/prompt/${propertyId}`;
     return this.httpClient.request('get', url, { responseType: 'text' });
   }
 
   getIssues(): Observable<Example[]> {
-    const url = `${this.path}/message/examples`;
+    const url = `${this.path}/management/issues-examples`;
     return this.httpClient.get<Example[]>(url);
   }
 
@@ -32,8 +33,12 @@ export class ChatService {
   }
 
   getVendors(): Observable<Vendor[]> {
-    const url = `${this.path}/vendor/list`;
+    const url = `${this.path}/management/vendor-list`;
     return this.httpClient.get<Vendor[]>(url);
+  }
+
+  allProperties(): Observable<Property[]> {
+    return this.httpClient.get<Property[]>(`${environment.apiUrl}/management/properties`);
   }
 
   getVendor(category: string): Observable<Vendor> {

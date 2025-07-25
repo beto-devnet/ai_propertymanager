@@ -33,7 +33,7 @@
       </header>
       <div class="demo-issue-input">
         <textarea [formControl]="issueMessageControl" rows="4"></textarea>
-        <button class="relative bottom-20 float-right left-3  rounded-full w-9 issue-button" mat-ripple (click)="processIssue()" [disabled]="blockButton()">
+        <button class="relative bottom-20 float-right left-3  rounded-full w-9 issue-button" [ngClass]="{'disabled': blockButton()}" mat-ripple (click)="processIssue()" [disabled]="blockButton()">
           <mat-icon class="mat-icon-white mt-1">add</mat-icon>
         </button>
 
